@@ -6,6 +6,8 @@ Durable Notes skill hierarchy.
 ## Read First
 
 - `README.md` - purpose, naming, dependency, and manual merge flow.
+- `AGENTS.shared.md` - concise always-loaded shared guidance for local root
+  `AGENTS.md` managed blocks.
 - `runbooks/durable-notes-memory-model.md` - wiki-plus-ledger memory model.
 - `runbooks/agent-host-responsibility.md` - practical local-agent host posture.
 - `credentials/NOTES.md` - credential metadata rules and examples.
@@ -22,6 +24,8 @@ Durable Notes skill hierarchy.
 ## Durable Notes Areas
 
 - `decisions/` - reusable decisions and rationale.
+- `decisions/2026-07-01-shared-agents-guidance-source.md` - source location and
+  merge strategy for shared `AGENTS.md` guidance.
 - `preferences/README.md` - durable preference examples.
 - `state/` - templates for local current-state and host-state notes.
 - `projects/README.md` - project note guidance.

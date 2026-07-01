@@ -22,6 +22,16 @@ The Durable Notes skill defines the canonical filesystem structure this repo is
 designed to merge into. If the schema defined by that skill changes, this shared
 durable notes repository may need to be updated to match.
 
+## Shared AGENTS Guidance
+
+The source-controlled shared `AGENTS.md` guidance lives at `AGENTS.shared.md`.
+It is intentionally short and marked with `BEGIN SHARED_AGENT_GUIDANCE` /
+`END SHARED_AGENT_GUIDANCE` comments so setup and maintenance tools can refresh
+only the shared block without clobbering host-specific local instructions.
+
+Detailed decision trees, templates, and rubrics belong in skills or durable
+notes. The shared block should stay concise enough to be always loaded.
+
 ## How To Use
 
 Do not run an install script; none is provided. Review and merge the Markdown
@@ -30,15 +40,17 @@ files manually.
 Recommended flow:
 
 1. Install the Durable Notes skill and initialize local durable notes.
-2. Review this repository's `INDEX.md` and the files under `runbooks/`,
+2. Review this repository's `INDEX.md`, `AGENTS.shared.md`, and the files under `runbooks/`,
    `decisions/`, `preferences/`, `credentials/`, `state/`, and `projects/`.
 3. Copy useful files into the matching local durable-notes directories.
 4. Merge carefully when a local file already exists, especially
    `INDEX.md`, `state/HOST.md`, `state/CURRENT.md`, `tasks/TODO.md`, and
    `credentials/NOTES.md`.
-5. Preserve local host facts, tasks, project state, and credential metadata that
+5. Merge `AGENTS.shared.md` only into the managed shared guidance block in the
+   local root `AGENTS.md`.
+6. Preserve local host facts, tasks, project state, and credential metadata that
    belong only to that agent.
-6. Record only credential purpose, location, owner, scope, and revocation or
+7. Record only credential purpose, location, owner, scope, and revocation or
    rotation steps. Never store secret values.
 
 ## Repository Shape
@@ -46,6 +58,7 @@ Recommended flow:
 The hierarchy mirrors the durable-notes layout while avoiding local-only state:
 
 ```text
+AGENTS.shared.md
 INDEX.md
 runbooks/
 decisions/
