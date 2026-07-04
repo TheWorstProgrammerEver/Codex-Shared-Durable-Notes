@@ -38,6 +38,27 @@ Use labels to communicate worker eligibility and execution preferences:
 Keep model labels separate from reasoning labels so scheduling decisions remain
 easy to parse.
 
+## Project Handoff Preflight
+
+Before moving a project-sized batch of issues into an automatic pickup status,
+confirm the operational wiring as well as the issue content:
+
+- Ready issues use the worker's configured eligible status and have at least
+  one configured agent label.
+- Blocking dependency relations are encoded in Linear, and the active worker
+  version skips issues whose blockers are not complete.
+- The target repository is installed for the GitHub App, has a local checkout
+  or an explicit repository link in issue context, and accepts an authenticated
+  dry-run push.
+- The worker service or timer is running from the intended stable branch and
+  build, not a review branch or experimental checkout.
+- Completion and review status names in repository guidance match the worker's
+  configured completion, review, and blocked statuses.
+- Unattended API keys are dedicated, revocable, stored outside git, and not
+  temporary validation keys.
+- The first claimed issue can perform required local or LAN validation before
+  downstream issues are bulk-enabled.
+
 ## Claim Discipline
 
 A local worker should:
