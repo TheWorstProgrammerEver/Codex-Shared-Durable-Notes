@@ -87,7 +87,8 @@ This repo should contain reusable agent knowledge:
 - credential metadata rules;
 - automated testing cleanup expectations;
 - agent email identity safety;
-- bootstrap failure and recovery lessons.
+- bootstrap failure and recovery lessons;
+- Kiwix-first offline knowledge reservoir setup for local agents and humans.
 
 Do not add host names, local IP addresses, device serials, private paths,
 personal anecdotes, one-off task logs, plaintext secrets, private keys, tokens,
