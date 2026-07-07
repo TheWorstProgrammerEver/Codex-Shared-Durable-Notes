@@ -20,6 +20,8 @@ Durable Notes skill hierarchy.
 - `runbooks/testing-cleanup-practices.md` - test isolation and cleanup checks.
 - `runbooks/agent-email-identity.md` - dedicated agent mailbox safety model.
 - `runbooks/bootstrap-recovery-lessons.md` - fresh-host setup and recovery notes.
+- `runbooks/offline-knowledge-reservoir.md` - Kiwix-first offline knowledge
+  library setup for local agents and humans.
 
 ## Durable Notes Areas
 
