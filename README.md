@@ -90,7 +90,9 @@ This repo should contain reusable agent knowledge:
 - bootstrap failure and recovery lessons;
 - Kiwix-first offline knowledge reservoir setup for local agents and humans;
 - NAS-backed Offline Reservoir sharing, ordinary-agent write boundaries, and
-  Mnemosyne-style storage ownership.
+  Mnemosyne-style storage ownership;
+- wake-word, post-wake transcription, and command-confirmation architecture for
+  microphone-enabled local agents.
 
 Do not add host names, local IP addresses, device serials, private paths,
 personal anecdotes, one-off task logs, plaintext secrets, private keys, tokens,

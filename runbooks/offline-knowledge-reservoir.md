@@ -42,6 +42,8 @@ Use a predictable service root such as `/srv/offline-knowledge`:
   zim/               # verified ZIM archives served by Kiwix
   manifests/         # one manifest per archive
   catalog/           # optional agent-friendly JSON or Markdown catalog
+  logs/              # bounded transfer and repair logs
+  state/             # durable job state and heartbeat records
   library.xml        # Kiwix XML library generated with kiwix-manage
 ```
 
@@ -71,6 +73,55 @@ aria2c --continue=true --check-integrity=true \
   --dir=/srv/offline-knowledge/incoming \
   --follow-metalink=mem "$base/$archive.meta4"
 ```
+
+For large ZIM downloads or repairs that must outlive the current Codex
+session, run the transfer as a detached local job such as a systemd oneshot
+service, not as foreground terminal output. The operator start command should
+return immediately:
+
+```bash
+systemctl start --no-block offline-knowledge-download.service
+systemctl status offline-knowledge-download.service
+```
+
+Record progress in a small state file and inspectable logs under the service
+root. For `aria2c` under systemd, quiet the console explicitly and send
+diagnostic output to a file:
+
+```bash
+aria2c --continue=true --check-integrity=true \
+  --dir=/srv/offline-knowledge/incoming \
+  --follow-metalink=mem \
+  --quiet=true \
+  --console-log-level=warn \
+  --summary-interval=0 \
+  --log=/srv/offline-knowledge/logs/$archive.aria2.log \
+  --log-level=warn \
+  "$base/$archive.meta4"
+```
+
+`--console-log-level=warn --summary-interval=0` is not sufficient by itself for
+non-interactive systemd jobs; `aria2c` can still emit progress readouts into
+the journal. Use `--quiet=true` when the journal should contain only service
+start, stop, and failure information.
+
+If a wrapper writes heartbeat records such as
+`/srv/offline-knowledge/state/health.ndjson`, start the heartbeat only after
+the `aria2c` child PID is captured, or make the heartbeat discover the process
+from the systemd cgroup or process table. Do not start a Bash background
+heartbeat before assigning the child PID and expect it to see later variable
+updates; the background loop runs in a subshell.
+
+For long-running one-shot units, keep resume and inspection separate from the
+initial start:
+
+- start with `systemctl start --no-block ...`;
+- inspect with `systemctl status ...`, `journalctl -u ...`, the state file,
+  and the `aria2c` log;
+- resume by starting the same unit again against the same `incoming/`
+  directory and descriptor;
+- bound log growth with service-specific log rotation, cleanup, or conservative
+  `aria2c` log levels.
 
 After download, validate size and checksum from the descriptor or upstream
 manifest before promoting the file:
@@ -184,6 +235,11 @@ require touching a large archive.
 - Search works for archives that include full-text indexes.
 - Every served ZIM has a manifest with source, retrieval date, variant, size,
   checksum, license, and provenance.
+- Detached `aria2c` jobs do not spam progress output into `journalctl -u ...`.
+- Heartbeat records include the child PID and current process state, or document
+  how state is discovered independently.
+- Transfer log directories stay bounded after the largest expected retry or
+  repair cycle.
 - No manifest or durable note contains credentials, private hostnames, private
   IP addresses, device identifiers, or local-only personal paths.
 

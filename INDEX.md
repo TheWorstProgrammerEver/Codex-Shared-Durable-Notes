@@ -24,6 +24,8 @@ Durable Notes skill hierarchy.
   library setup for local agents and humans.
 - `runbooks/offline-reservoir-shared-storage.md` - NAS-backed Offline Reservoir
   permission, proposal, promotion, and Mnemosyne ownership model.
+- `runbooks/local-agent-voice-activation.md` - wake-word, STT, and safety
+  architecture for microphone-enabled local agents.
 
 ## Durable Notes Areas
 
