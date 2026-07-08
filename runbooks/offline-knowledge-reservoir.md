@@ -191,6 +191,57 @@ Bind to localhost instead of all addresses when the content should only be
 available to local agents or a reverse proxy. Use firewall policy or a private
 network boundary before exposing the service beyond a trusted LAN.
 
+## Library Path And OPDS Validation
+
+Do not treat `kiwix-serve` startup success as proof that every archive in
+`library.xml` is being served. Kiwix can load the XML while silently exposing
+only entries whose `book` `path` attributes resolve to real local ZIM files.
+
+After any `library.xml` update:
+
+- resolve every `book` `path` from the same path context used by the service
+  or from the documented library root, and confirm the target exists before
+  restarting or declaring success;
+- prefer stable relative paths such as `zim/<filename>.zim` when the service
+  runs from the library root, or document the exact `kiwix-manage` and
+  `kiwix-serve` path convention used on the host;
+- restart or reload `kiwix-serve`, then compare the `library.xml` `book` count
+  with `/catalog/v2/entries?count=-1`;
+- explicitly check that selected or newly promoted archive IDs appear in OPDS,
+  not just that OPDS returns HTTP 200;
+- investigate any count mismatch or missing selected ID as a library path,
+  service working-directory, permissions, or failed-promotion problem before
+  moving on to article smoke tests.
+
+Example path-resolution check:
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+from xml.etree import ElementTree
+
+library = Path("/srv/offline-knowledge/library.xml")
+root = library.parent
+missing = []
+
+for book in ElementTree.parse(library).findall(".//book"):
+    raw_path = book.get("path")
+    if not raw_path:
+        missing.append((book.get("id"), "<missing path>"))
+        continue
+    resolved = (root / raw_path).resolve()
+    if not resolved.is_file():
+        missing.append((book.get("id"), raw_path))
+
+if missing:
+    for book_id, raw_path in missing:
+        print(f"missing: {book_id} -> {raw_path}")
+    raise SystemExit(1)
+
+print("all library.xml book paths resolve")
+PY
+```
+
 ## Agent-Friendly Access
 
 Preserve the human browser UI, but expose stable machine-readable surfaces:
@@ -229,8 +280,12 @@ require touching a large archive.
 ## Validation Checklist
 
 - `kiwix-serve` starts under systemd and returns the library page.
+- Every `library.xml` `book` path resolves to an existing ZIM from the service
+  path context or documented library root.
 - `/catalog/v2/root.xml` and `/catalog/v2/entries?count=-1` return inventory
-  metadata.
+  metadata, and the OPDS entry count matches the `library.xml` `book` count.
+- Selected, newly promoted, or expected archive IDs are present in OPDS after
+  service restart.
 - At least one article opens through HTTP for every promoted archive.
 - Search works for archives that include full-text indexes.
 - Every served ZIM has a manifest with source, retrieval date, variant, size,
