@@ -72,6 +72,12 @@ A local worker should:
 7. write logs and local run state;
 8. report completion, blocker, or failure back to Linear.
 
+For multi-hour transfers, imports, backups, migrations, or builds, the spawned
+agent should hand the work to an inspectable durable runner such as systemd or
+tmux and leave state/log paths in Linear before yielding. For Kiwix/ZIM
+downloads specifically, follow the detached `aria2c` guidance in
+`runbooks/offline-knowledge-reservoir.md`.
+
 ## Credentials
 
 - Use a dedicated Linear API key for unattended pollers.
