@@ -88,7 +88,9 @@ This repo should contain reusable agent knowledge:
 - automated testing cleanup expectations;
 - agent email identity safety;
 - bootstrap failure and recovery lessons;
-- Kiwix-first offline knowledge reservoir setup for local agents and humans.
+- Kiwix-first offline knowledge reservoir setup for local agents and humans;
+- NAS-backed Offline Reservoir sharing, ordinary-agent write boundaries, and
+  Mnemosyne-style storage ownership.
 
 Do not add host names, local IP addresses, device serials, private paths,
 personal anecdotes, one-off task logs, plaintext secrets, private keys, tokens,

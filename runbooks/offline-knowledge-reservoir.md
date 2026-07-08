@@ -5,6 +5,10 @@ knowledge library for humans and agents. Prefer a small Kiwix service first;
 graduate to Internet-in-a-Box only when the host is meant to be a broader
 community learning appliance.
 
+For multi-agent NAS-backed sharing, least-privilege mounts, ordinary-agent
+write namespaces, and Mnemosyne-style promotion ownership, also read
+`runbooks/offline-reservoir-shared-storage.md`.
+
 ## Kiwix Or Internet-in-a-Box
 
 Choose Kiwix when the target is:
@@ -43,6 +47,9 @@ Use a predictable service root such as `/srv/offline-knowledge`:
 
 Keep large downloads out of home directories and temp directories. The service
 root should have enough free space for a full replacement copy during refreshes.
+When the service root is NAS-backed, serve canonical ZIMs and metadata through a
+read-only mount and keep download, repair, and proposal writes in separate
+owned namespaces.
 
 ## Download And Validation
 
