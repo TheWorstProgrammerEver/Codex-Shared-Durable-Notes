@@ -32,6 +32,36 @@ Choose Internet-in-a-Box when the target is:
 On an already-managed Codex host, do not install IIAB over the top of the host
 unless the operator explicitly accepts that larger ownership boundary.
 
+## Broader Learning Stack Rubric
+
+Keep Kiwix as the first archive and service layer. It provides the simplest
+portable corpus shape, mature ZIM tooling, LAN-friendly HTTP serving, and
+agent-readable inventory surfaces. Add broader learning-stack components only
+when they preserve the managed host's recovery, update, backup, and security
+model.
+
+Prefer add-on services or content layers on a managed host when they are:
+
+- LAN-only or localhost-only by default;
+- bounded by an explicit storage, time, crawl, or user-count limit;
+- cataloged with provenance, license, checksum, retrieval date, and refresh
+  policy;
+- backed by an owner-approved promotion path when they introduce mutable state;
+- detachable and resumable when they perform long downloads, imports, or
+  crawls.
+
+Use this split before adding anything beyond Kiwix:
+
+| Layer | Good Fit | Guardrails |
+| --- | --- | --- |
+| Kolibri courseware | Preferred next education/courseware candidate for lessons, quizzes, facility state, and offline channel imports. | Start with one small channel or subset, bind to a trusted LAN or localhost path, keep it on a non-conflicting service port, record channel provenance and refresh cadence, and plan backup of its application state before treating it as canonical. |
+| Zimit or Browsertrix captures | Targeted docs, manuals, or narrow sites that are not already available as suitable ZIMs. | Require a safe-crawl policy before each job: source approval, license/terms review, scope allowlist, depth/URL rules, rate limits, storage and time caps, detached job logs/state, and post-crawl validation of the produced ZIM/WARC/WACZ before publication. Do not run an open-ended crawler from the reservoir host. |
+| Static documents and ebooks | PDFs, manuals, public-domain ebooks, local operator documents, and non-ZIM artifacts that only need browse/download plus catalog metadata. | Start read-mostly with static HTTP or an index page plus a machine-readable catalog. Add tools such as Calibre only when library metadata/search needs justify another service. Keep mutable ingestion separate from served canonical content. |
+| WebDAV staging | Controlled uploads or proposals from approved humans or agents. | Treat WebDAV as a narrow staging namespace, not canonical truth. Use authentication, quotas, malware/content review where appropriate, backups, cleanup policy, and owner-approved promotion into the read-mostly library. |
+| Agent/developer support pack | Offline docs, runbooks, small wheel/tarball sets, package lists, checksummed installers, or limited package-cache seeds for local agent recovery. | Start curated and manifest-driven. Avoid full package, container, model, or language-registry mirrors until storage, freshness, license, and operational ownership are explicitly justified. |
+| Nextcloud-style collaboration | Sync, sharing, comments, office workflows, or multi-user collaboration. | Defer from the managed host unless a later issue explicitly accepts the database, container, auth, update, TLS/domain, and backup surface. Prefer a separate NAS or collaboration appliance path. |
+| IIAB, offspot, or hotspot appliance | Classroom/community-library mode, captive portal, no-LAN access, dashboards, and AP/DHCP/DNS/firewall ownership. | Keep this as a separate image, device, or appliance boundary by default. Do not blend hotspot/network ownership into a Codex-managed host that depends on existing SSH, systemd, and LAN recovery paths. |
+
 ## Filesystem Layout
 
 Use a predictable service root such as `/srv/offline-knowledge`:
@@ -467,7 +497,16 @@ require touching a large archive.
 - `kiwix-manage`: https://man.archlinux.org/man/kiwix-manage.1.en
 - Debian `kiwix-tools`: https://packages.debian.org/sid/utils/kiwix-tools
 - Official Wikipedia ZIM directory: https://download.kiwix.org/zim/wikipedia/
+- Kolibri on Raspberry Pi: https://kolibri.readthedocs.io/en/latest/install/raspberry_pi.html
+- Kolibri Debian/Ubuntu packages: https://kolibri.readthedocs.io/en/latest/install/ubuntu-debian.html
 - Internet-in-a-Box: https://internet-in-a-box.org/
 - IIAB installation: https://github.com/iiab/iiab/wiki/IIAB-Installation
+- IIAB networking: https://github.com/iiab/iiab/wiki/IIAB-Networking
+- Offspot overview: https://github.com/offspot/overview
 - Zimit: https://github.com/openzim/zimit
+- Browsertrix Crawler user guide: https://crawler.docs.browsertrix.com/user-guide/
+- Apache WebDAV module: https://httpd.apache.org/docs/current/mod/mod_dav.html
+- Project Gutenberg offline catalogs: https://www.gutenberg.org/ebooks/offline_catalogs.html
+- Project Gutenberg mirroring how-to: https://www.gutenberg.org/help/mirroring.html
+- Nextcloud All-in-One: https://github.com/nextcloud/all-in-one
 - `python-libzim`: https://github.com/openzim/python-libzim
