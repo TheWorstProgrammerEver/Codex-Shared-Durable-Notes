@@ -279,8 +279,141 @@ Preserve the human browser UI, but expose stable machine-readable surfaces:
 - optional `python-libzim` reader or a small MCP/search shim for structured
   article lookup without scraping the browser UI.
 
-Agents should prefer the catalog and OPDS metadata for inventory questions, then
-use HTTP search/content or `python-libzim` for article retrieval.
+Agents should prefer the aggregate catalog and OPDS metadata for inventory
+questions, then use a local JSON wrapper around Kiwix HTTP routes for retrieval
+when that is enough.
+
+### Catalog Plus Local Wrapper Pattern
+
+Use this low-complexity pattern before adding another daemon:
+
+1. Keep `kiwix-serve` as the human UI and canonical local HTTP reader.
+2. Generate an aggregate catalog such as `catalog/offline-knowledge.json` from
+   `library.xml`, per-archive manifests, and on-disk ZIM metadata.
+3. Provide a local CLI wrapper, for example `offline-knowledge-agent`, that
+   reads the aggregate catalog, calls Kiwix on `127.0.0.1`, and emits JSON with
+   archive provenance, retrieval context, and the Kiwix route used.
+
+The wrapper should have commands for at least:
+
+- `catalog`: list archive summaries from the aggregate catalog, including
+  title, filename, local URL path, checksum, source URL, retrieval and
+  verification timestamps, license, provenance, refresh policy, article and
+  media counts, tags, and a full-text-index flag;
+- `catalog --archive <archive>`: resolve one archive by filename, title,
+  library ID, library name, or URL path;
+- `suggest --archive <archive> --term <term>`: call Kiwix `/suggest`, preserve
+  its JSON suggestions, and add archive provenance;
+- `search --archive <archive> --query <query>`: call Kiwix `/search`, parse the
+  HTML result list into JSON, and report that the result came from parsed Kiwix
+  search HTML;
+- `article --archive <archive> --path <article_path>`: fetch the served article
+  HTML from Kiwix, extract text for agent use, and include the exact local HTML
+  URL for rendered tables, images, and page-specific license details.
+
+This interface is deliberately local-first. It should not fetch external
+internet resources during catalog, search, suggestion, or article retrieval
+after the corpus is present.
+
+### Retrieval Layer Tradeoffs
+
+Distinguish the retrieval surfaces clearly:
+
+- Aggregate catalog: best first stop for agent inventory, local provenance,
+  checksums, retrieval and verification timestamps, license notes, refresh
+  policy, and disk/corpus summary fields. Kiwix does not maintain these local
+  operations fields for you.
+- Kiwix OPDS: good for served-inventory checks and comparing `library.xml`
+  counts with `/catalog/v2/entries?count=-1`; not enough by itself for local
+  provenance, checksum, or freshness decisions.
+- Kiwix `/suggest`: returns JSON and is useful for title completion or finding
+  article paths in a specific archive.
+- Kiwix `/search`: returns an HTML page. It can include useful snippets and
+  article links, but any JSON wrapper has to parse Kiwix's page shape.
+- Article routes: return served HTML. Text extraction is useful for agent
+  context, but agents should keep the exact local URL when rendered layout,
+  images, tables, or page-specific licensing matter.
+- `kiwix-search`: fast local CLI search, but often returns titles only. Use it
+  for quick checks when titles are enough; prefer the wrapper when paths,
+  snippets, archive provenance, and JSON output matter.
+- `python-libzim`: use when direct ZIM reads, richer metadata access, or a
+  stable non-HTML parser justify adding a dependency.
+- Small HTTP shim: use when multiple local or remote consumers need a stable
+  HTTP JSON API beyond the human Kiwix UI.
+- MCP server: use when MCP-native discovery, tool schemas, or cross-agent tool
+  registration justify a separate process and operational surface.
+
+Search quality depends on archive indexes. Archives tagged `_ftindex:yes`
+support full-text search; archives without a full-text index may behave more
+like title search or produce sparse results. Surface this flag in the aggregate
+catalog or wrapper output so agents can interpret weak search results correctly.
+
+### Agent Retrieval Validation Examples
+
+Run these snippets in the same shell. Use neutral variables and replace the
+archive and article path with a small known-good archive on the host:
+
+```bash
+agent=offline-knowledge-agent
+archive=wikipedia_en_all_nopic_2026-06.zim
+article=Raspberry_Pi
+tmpdir=$(mktemp -d)
+trap 'rm -rf "$tmpdir"' EXIT
+
+$agent catalog | python3 -m json.tool >/dev/null
+$agent catalog --archive "$archive" | python3 -m json.tool >/dev/null
+$agent suggest --archive "$archive" --term Raspberry --limit 1 \
+  | python3 -m json.tool >/dev/null
+$agent search --archive "$archive" --query "Raspberry Pi" --limit 1 \
+  | python3 -m json.tool >/dev/null
+$agent article --archive "$archive" --path "$article" --max-chars 1000 \
+  | python3 -m json.tool >/dev/null
+```
+
+Check failure behavior returns JSON and a non-zero exit:
+
+```bash
+if $agent catalog --archive missing.zim >"$tmpdir/missing.out" 2>"$tmpdir/missing.json"; then
+  echo "expected missing archive failure"
+  exit 1
+fi
+python3 -m json.tool "$tmpdir/missing.json" >/dev/null
+
+if $agent search --archive "$archive" --query "" >"$tmpdir/empty.out" 2>"$tmpdir/empty.json"; then
+  echo "expected empty search failure"
+  exit 1
+fi
+python3 -m json.tool "$tmpdir/empty.json" >/dev/null
+```
+
+Check that the wrapper documents local-only retrieval scope and does not require
+a new listener:
+
+```bash
+$agent catalog >"$tmpdir/catalog.json"
+
+python3 - "$tmpdir/catalog.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    payload = json.load(handle)
+
+interface = payload.get("context", {}).get("interface", {})
+scope = " ".join(str(value) for value in interface.values())
+if "127.0.0.1" not in scope:
+    raise SystemExit("agent interface does not document localhost Kiwix access")
+print("agent interface documents localhost Kiwix access")
+PY
+
+curl --fail --silent --output /dev/null \
+  "http://127.0.0.1:8080/catalog/v2/entries?count=-1"
+```
+
+If the Kiwix service is intended to be local-agent-only, also confirm the
+service binds to localhost rather than every interface. If the human UI is
+intentionally LAN-visible, document that separately and keep the agent wrapper's
+Kiwix calls on `127.0.0.1`.
 
 ## Refresh Strategy
 
@@ -311,6 +444,12 @@ require touching a large archive.
   service restart.
 - At least one article opens through HTTP for every promoted archive.
 - Search works for archives that include full-text indexes.
+- Agent-facing catalog, suggest, search, and article commands emit valid JSON
+  with archive provenance and retrieval context.
+- Agent-facing failure cases emit JSON and non-zero exits for missing archives
+  or invalid input.
+- The agent wrapper calls local catalog files and `127.0.0.1` Kiwix routes; any
+  LAN-visible human UI exposure is deliberate and documented separately.
 - Every served ZIM has a manifest with source, retrieval date, variant, size,
   checksum, license, and provenance.
 - Detached `aria2c` jobs do not spam progress output into `journalctl -u ...`.
