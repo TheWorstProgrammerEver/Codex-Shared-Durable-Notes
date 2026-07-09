@@ -159,12 +159,20 @@ long as it is easy to parse. Include at least:
 
 Install `kiwix-tools` from the host's package source or an approved upstream
 release. Use `kiwix-manage` to maintain `library.xml`; avoid hand-writing XML.
+When relying on stable relative paths in `library.xml`, run `kiwix-manage`
+mutations from the documented reservoir root and pass the library path from
+that same root, such as `library.xml`. Do not invoke add/remove commands from
+an arbitrary working directory and assume `--zimPathToSave=zim/...` will still
+produce paths that resolve from the service's library context.
 
 Example service setup:
 
 ```bash
-kiwix-manage /srv/offline-knowledge/library.xml add \
-  /srv/offline-knowledge/zim/wikipedia_en_all_nopic_2026-06.zim
+cd /srv/offline-knowledge
+
+kiwix-manage library.xml add \
+  zim/wikipedia_en_all_nopic_2026-06.zim \
+  --zimPathToSave=zim/wikipedia_en_all_nopic_2026-06.zim
 ```
 
 Example systemd unit shape:
@@ -203,8 +211,13 @@ After any `library.xml` update:
   or from the documented library root, and confirm the target exists before
   restarting or declaring success;
 - prefer stable relative paths such as `zim/<filename>.zim` when the service
-  runs from the library root, or document the exact `kiwix-manage` and
-  `kiwix-serve` path convention used on the host;
+  runs from the library root, and run `kiwix-manage` add/remove operations with
+  that root as the working directory and `LIBRARY_PATH` context;
+- after add/remove operations, inspect the saved `book` `path` values
+  themselves, not only the resolved filesystem targets;
+- if the host intentionally uses absolute paths or a different relative-path
+  convention, document the exact `kiwix-manage` working directory,
+  `LIBRARY_PATH`, and `kiwix-serve` path convention used on the host;
 - restart or reload `kiwix-serve`, then compare the `library.xml` `book` count
   with `/catalog/v2/entries?count=-1`;
 - explicitly check that selected or newly promoted archive IDs appear in OPDS,
@@ -213,7 +226,8 @@ After any `library.xml` update:
   service working-directory, permissions, or failed-promotion problem before
   moving on to article smoke tests.
 
-Example path-resolution check:
+Example path-resolution check for a library that should save root-relative
+`zim/<filename>.zim` values:
 
 ```bash
 python3 - <<'PY'
@@ -223,15 +237,24 @@ from xml.etree import ElementTree
 library = Path("/srv/offline-knowledge/library.xml")
 root = library.parent
 missing = []
+bad_saved_paths = []
 
 for book in ElementTree.parse(library).findall(".//book"):
     raw_path = book.get("path")
     if not raw_path:
         missing.append((book.get("id"), "<missing path>"))
         continue
+    saved = Path(raw_path)
+    if saved.is_absolute() or ".." in saved.parts or saved.parts[:1] != ("zim",):
+        bad_saved_paths.append((book.get("id"), raw_path))
     resolved = (root / raw_path).resolve()
     if not resolved.is_file():
         missing.append((book.get("id"), raw_path))
+
+if bad_saved_paths:
+    for book_id, raw_path in bad_saved_paths:
+        print(f"unexpected saved path: {book_id} -> {raw_path}")
+    raise SystemExit(1)
 
 if missing:
     for book_id, raw_path in missing:
