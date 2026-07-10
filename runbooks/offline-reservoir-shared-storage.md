@@ -127,6 +127,9 @@ Separate agent brain backups from bulky corpora:
   definitions, scripts, repo metadata, and other restore-critical state.
 - Bulky corpora include ZIMs, large model artifacts, training datasets, media,
   and downloaded archive mirrors.
+- For boot drives, memory drives, or removable media that may contain an agent,
+  use the whole-device preservation guardrails in
+  `runbooks/agent-host-responsibility.md` before destructive drive work.
 - Ordinary agents may write backup output only to their assigned backup
   namespace.
 - Mnemosyne owns backup promotion, retention, snapshot cadence, restore smoke

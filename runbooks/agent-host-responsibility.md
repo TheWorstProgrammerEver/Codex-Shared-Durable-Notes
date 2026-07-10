@@ -33,6 +33,57 @@ metadata in durable notes:
 Do not turn inboxes, temp directories, logs, or one-off task outputs into
 durable memory by accident. Promote only facts that will help future agents.
 
+## Agent Media Preservation
+
+Treat agent boot drives, memory drives, and removable media that may contain an
+agent as durable identity-bearing state until proven otherwise. Before
+formatting, imaging, repartitioning, reusing, or otherwise destructively
+changing that media:
+
+- identify the likely agent name from physical labels, mounted volume names,
+  durable notes, manifests, or the human operator;
+- create a whole-device backup image when partitions or filesystems may not be
+  fully readable from the current host OS;
+- write backup metadata and checksums next to the image;
+- store the backup under an agent-named path in the approved backup target;
+- confirm the backup exists and its checksum verifies before running
+  destructive format, restore, or image-write helpers.
+
+A mounted-file copy is not a substitute for a drive-level preservation image
+when the media may contain Linux root filesystems, boot partitions, service
+state, durable notes, or other agent memory. Mounted-file copies can be useful
+as a readable convenience artifact, but they may miss filesystems the current
+host cannot mount.
+
+Prefer physical drive labels that include the agent name, and mirror that name
+in backup paths, manifests, and restore notes. Use the NAS or storage-owner
+model in `runbooks/offline-reservoir-shared-storage.md` for regular backup
+cadence, retention, and promotion into shared storage; keep one-off
+preservation work under an explicit approved backup target until that owner
+workflow exists.
+
+For backup and restore helper scripts:
+
+- refuse internal system, boot, recovery, firmware-adjacent, and other
+  protected host disks through non-bypassable guardrails;
+- require explicit backup confirmation before destructive format or image-write
+  work;
+- re-verify source and destination mount identity immediately before writing,
+  especially when using paths that may disappear if an external destination is
+  unmounted;
+- write from inside the verified destination mount or use another equivalent
+  guard so a missing external mount cannot fall through to internal storage;
+- make dry-run output show the selected source, destination, backup path, image
+  size, and any size mismatch or larger-destination warning;
+- warn operators that source volumes may be intentionally unmounted during raw
+  imaging and that this does not mean the source media is safe to remove.
+
+For restore helpers, select backup directories by normalized timestamps, require
+both the raw image and checksum manifest, verify the checksum before destructive
+writes, refuse restoring onto the disk that contains the backup source, and use
+a mounted destination volume only as an identity anchor for resolving the whole
+destination disk.
+
 ## Human Operator Access
 
 For headless machines:
