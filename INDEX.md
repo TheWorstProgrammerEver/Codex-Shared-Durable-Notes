@@ -8,6 +8,8 @@ Durable Notes skill hierarchy.
 - `README.md` - purpose, naming, dependency, and manual merge flow.
 - `AGENTS.shared.md` - concise always-loaded shared guidance for local root
   `AGENTS.md` managed blocks.
+- `agents/README.md` - fleet role profiles for collaboration boundaries,
+  responsibilities, and storage expectations.
 - `runbooks/durable-notes-memory-model.md` - wiki-plus-ledger memory model.
 - `runbooks/agent-host-responsibility.md` - practical local-agent host posture.
 - `credentials/NOTES.md` - credential metadata rules and examples.
