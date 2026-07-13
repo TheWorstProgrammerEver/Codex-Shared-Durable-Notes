@@ -58,6 +58,42 @@ Before claiming a PR is ready:
 - check required status checks or explain when none exist;
 - avoid deleting branches until the PR is merged and branch cleanup is safe.
 
+## Pinned Review Worktrees
+
+An ordinary branch checkout is sufficient when the local checkout is clean,
+already on the PR branch being reviewed, and owned by the current reviewer for
+the whole validation window.
+
+Use a detached temporary worktree when the main checkout is shared, dirty, on a
+different branch, used by scheduled workers, or likely to be touched by another
+agent during review. Pin the worktree to the PR head SHA when available; pin to
+the reviewed remote branch when the exact SHA is not available yet.
+
+```bash
+git fetch origin
+git worktree add --detach <review-worktree> <pr-head-sha>
+```
+
+If the exact head SHA is not available:
+
+```bash
+git fetch origin <pr-branch>
+git worktree add --detach <review-worktree> origin/<pr-branch>
+```
+
+Run inspection, diffs, builds, and tests from the pinned worktree, and record
+the reviewed SHA or remote branch in the review notes. This keeps validation
+scoped to the submitted artifact even if another agent later moves the shared
+checkout or pushes a stacked follow-up branch.
+
+Before cleanup, copy or summarize only the review artifacts that need to be
+preserved. Then remove the temporary worktree:
+
+```bash
+git worktree remove <review-worktree>
+git worktree prune
+```
+
 ## Gotchas
 
 - Failed token minting can leave empty shell variables and cause confusing
