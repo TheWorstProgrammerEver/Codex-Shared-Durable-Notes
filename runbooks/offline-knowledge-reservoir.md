@@ -78,6 +78,90 @@ Use this split before adding anything beyond Kiwix:
 | Nextcloud-style collaboration | Sync, sharing, comments, office workflows, or multi-user collaboration. | Defer from the managed host unless a later issue explicitly accepts the database, container, auth, update, TLS/domain, and backup surface. Prefer a separate NAS or collaboration appliance path. |
 | IIAB, offspot, or hotspot appliance | Classroom/community-library mode, captive portal, no-LAN access, dashboards, and AP/DHCP/DNS/firewall ownership. | Follow `runbooks/offline-community-library-appliance.md`. Keep this as a separate image, device, or appliance boundary by default. Do not blend hotspot/network ownership into a Codex-managed host that depends on existing SSH, systemd, and LAN recovery paths. |
 
+## LAN-Only Kolibri Pilot
+
+Use Kolibri beside Kiwix when learners need structured courses, lessons,
+quizzes, progress, or facility state. Keep Kiwix as the simpler read-only
+archive layer when browsing and search are enough. This procedure distills the
+validated pilot from
+[RYA-83 - Pilot Kolibri offline courseware on LAN-only Pi](https://linear.app/ryan-hayward/issue/RYA-83/pilot-kolibri-offline-courseware-on-lan-only-pi)
+without carrying its host or network details into shared guidance.
+
+Before installation, re-read the current official Raspberry Pi and
+Debian/Ubuntu instructions. Confirm the host OS release and architecture, the
+recommended repository and signing-key path for that release, candidate package
+versions, and an `apt` dry run. Do not copy an older host's PPA stanza:
+Learning Equality's repository instructions and supported releases can change.
+For an already-managed Raspberry Pi or Debian host, prefer `kolibri-server`
+while the official docs still recommend it and its reverse-proxy/static-cache
+optimizations fit the host.
+
+Treat `kolibri-server.service` as the primary service boundary. The optimized
+package uses nginx and uWSGI while Kolibri core still handles database setup,
+migrations, downloads, and background work. Inspect the installed units,
+initializer, dependencies, generated configuration, service identity, data
+directory, and enabled state instead of assuming another host's exact unit
+graph. Disable any competing base `kolibri.service` wrapper only after
+confirming how the optimized package starts the core process, and verify both
+stopped and rebooted behavior.
+
+Before assigning ports, inspect all listeners and the active Kiwix unit.
+Kolibri can require a main HTTP port plus a separate origin for ZIP/HTML5
+content, so reserve and test both rather than checking only the landing-page
+port. Keep them distinct from Kiwix and every other reservoir service. Bind only
+to the intended trusted interface, or enforce the same boundary with the host
+firewall; do not publish, port-forward, or expose the pilot to the public
+Internet. Document port purpose without recording private addresses or
+hostnames.
+
+Start with one informal facility and only the minimum administrator account
+needed for device and content management. Enable guest browsing only when the
+operator accepts that resources are readable by anyone on the trusted LAN.
+Defer learner accounts and progress tracking until their privacy, retention,
+backup, and deletion rules are explicit. Keep credentials in a scoped,
+revocable secret store; durable notes and manifests should record only the
+credential purpose, storage location category, owner, scope, and
+rotation/revocation path.
+
+Import one small public channel or an approved subset first. Record its source,
+channel ID, title, version, license, retrieval date, resource count, expected
+size, actual storage use, and refresh policy. The current CLI workflow imports
+channel metadata before content and exports both to a `KOLIBRI_DATA` directory:
+
+```text
+kolibri manage importchannel network <channel-id>
+kolibri manage importcontent network <channel-id>
+kolibri manage exportchannel <channel-id> <drive-root>/KOLIBRI_DATA
+kolibri manage exportcontent <channel-id> <drive-root>/KOLIBRI_DATA
+```
+
+Run management commands as the installed service identity with its configured
+Kolibri home, and recheck the current CLI help before scripting them. Test an
+export and disk import while the pilot is small. For refreshes, back up the
+database and facility state, update channel metadata, import changed content
+during a low-activity window, then repeat content and offline-client checks.
+Stop Kolibri before package upgrades and retain a restorable pre-upgrade
+database backup.
+
+Do not accept a loopback-only smoke test as proof of offline use. Connect a
+client with a route only to the trusted service network and no public default
+route or public DNS, or use an equivalent isolated network namespace. From that
+client, prove that public Internet access fails while the Kolibri landing page
+and at least one real imported lesson, document, exercise, or HTML5 resource
+load successfully. Recheck Kiwix from the same service host after the import.
+
+Before promoting the pilot, verify:
+
+- package consistency, free space, data-directory ownership, database backup,
+  channel inventory, resource counts, and representative content;
+- primary and support services, both Kolibri listeners, Kiwix coexistence, and
+  failure-free startup after a real reboot;
+- bounded logs and enough headroom for import, export, upgrade, and rollback
+  copies;
+- a rehearsed rollback that disables Kolibri without changing Kiwix, preserves
+  a restorable database/export, and removes packages, repository configuration,
+  or data only as separate operator-approved steps.
+
 ## Safe Website Capture Workflow
 
 Use site capture only when a suitable official ZIM or other redistributable
@@ -621,6 +705,12 @@ require touching a large archive.
 - Official Wikipedia ZIM directory: https://download.kiwix.org/zim/wikipedia/
 - Kolibri on Raspberry Pi: https://kolibri.readthedocs.io/en/latest/install/raspberry_pi.html
 - Kolibri Debian/Ubuntu packages: https://kolibri.readthedocs.io/en/latest/install/ubuntu-debian.html
+- Kolibri Debian server package source:
+  https://github.com/learningequality/kolibri/tree/develop/platforms/debian-server
+- Kolibri channel import/export CLI:
+  https://kolibri.readthedocs.io/en/latest/manage/command_line.html
+- Kolibri device and guest-access settings:
+  https://kolibri.readthedocs.io/en/latest/manage/device.html
 - Internet-in-a-Box: https://internet-in-a-box.org/
 - IIAB installation: https://github.com/iiab/iiab/wiki/IIAB-Installation
 - IIAB networking: https://github.com/iiab/iiab/wiki/IIAB-Networking
