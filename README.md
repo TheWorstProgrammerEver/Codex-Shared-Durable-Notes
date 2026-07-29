@@ -85,6 +85,8 @@ This repo should contain reusable agent knowledge:
 - Linear local-worker operating model;
 - headless SSH and OAuth operator patterns;
 - credential metadata rules;
+- secretless third-party integrations using typed, per-invocation action
+  authorization outside model-controlled runtimes;
 - automated testing cleanup expectations;
 - agent email identity safety;
 - rail-agnostic agent payment authority, aggregate budgets, custody boundaries,

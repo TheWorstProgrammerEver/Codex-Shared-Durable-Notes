@@ -8,6 +8,10 @@ intent is authorized before a rail adapter can move value.
 This is an architecture and operating runbook, not legal, tax, accounting, or
 regulatory advice.
 
+Use `runbooks/secretless-agent-integrations.md` for the general credential and
+effect-authorization boundary. This runbook adds payment-specific custody,
+aggregate budget, settlement, and reconciliation controls.
+
 ## Core Invariant
 
 Keep payment authorization outside the model runtime:

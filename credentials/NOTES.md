@@ -4,6 +4,12 @@ Do not store secrets, private keys, tokens, passwords, recovery codes, Wi-Fi
 credentials, OAuth refresh tokens, app passwords, or full credential values in
 durable notes.
 
+Protected storage is not the authorization boundary for a model-controlled
+runtime. When an agent needs to exercise a third-party credential, use
+`runbooks/secretless-agent-integrations.md`: keep the credential in a connector
+and authorize each typed effect and its concrete arguments. Do not expose a
+token-returning vault or credential helper to the agent.
+
 Record only:
 
 - purpose;
