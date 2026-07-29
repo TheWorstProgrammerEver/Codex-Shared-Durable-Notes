@@ -126,6 +126,182 @@ of canonical archives. Refreshes remain full replacement events with staging,
 checksum validation, manifest/catalog updates, smoke tests, and rollback or
 retention decisions.
 
+## Kiwix And Kolibri Split-Storage Cutover
+
+Use different storage semantics for these services. Kiwix consumes an approved
+corpus; Kolibri writes imported content while also maintaining mutable
+application and facility state.
+
+| Service data | Location | Access |
+| --- | --- | --- |
+| Kiwix ZIMs, `library.xml`, and promoted catalog metadata | Dedicated NAS corpus mount | Read-only to the Kiwix service identity |
+| Kolibri `CONTENT_DIR` payload | Dedicated NAS content mount | Read-write to the Kolibri service identity |
+| Kolibri home, live application/facility database, configuration, cache, logs, and runtime state | Suitable local storage | Read-write to the Kolibri service identity; never placed on SMB by this pattern |
+| Download, repair, proposal, and backup work | Separate owner-approved namespaces | Not exposed through either serving mount |
+
+Do not point Kolibri's whole home or data directory at SMB. Set only the
+version-supported `[Paths] CONTENT_DIR` setting to the NAS content mount. Keep
+the live application SQLite database, facility and learner state, job state,
+configuration, cache, and logs local. Some Kolibri versions place imported
+channel index files under `CONTENT_DIR`; those travel with the content payload,
+but that does not justify moving the live application database or the rest of
+Kolibri's home. Recheck the installed version's path layout and current
+`content movedirectory` procedure before cutover.
+
+### Separate Mount And Identity Boundary
+
+Provision two NAS principals or equivalently isolated ACL roles, not one
+general service-host account:
+
+- the Kiwix principal can read only the promoted Kiwix corpus subtree;
+- the Kolibri principal can read and write only its content payload subtree;
+- neither principal can access the other service's namespace, storage-owner
+  work areas, snapshots, proposals, backups, or unrelated shares.
+
+Mount those subtrees separately and map each mount to only its service account.
+The NAS ACL is the authority; client-side ownership and modes provide a second
+boundary. Do not use a shared Unix group, a broad parent mount, `noperm`, or a
+single credential that can reach both namespaces.
+
+The following is a shape, not a copy-paste unit. Replace every placeholder in
+host-private deployment configuration, keep authentication material outside
+shared notes, and name each `.mount` unit from its `Where=` path with
+`systemd-escape --path --suffix=mount`:
+
+```ini
+[Unit]
+Description=<service> NAS content mount
+After=network-online.target
+Wants=network-online.target
+
+[Mount]
+What=//<nas-host>/<share>/<service-subdirectory>
+Where=<service-mount>
+Type=cifs
+Options=<ro-or-rw>,_netdev,nosuid,nodev,noexec,uid=<service-user>,gid=<service-group>,forceuid,forcegid,file_mode=<file-mode>,dir_mode=<directory-mode>
+TimeoutSec=30
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Use `ro`, file mode `0440`, and directory mode `0550` for Kiwix. Use `rw`,
+file mode `0640`, and directory mode `0750` for Kolibri content. Adjust a
+support process's read access narrowly if the installed package proves it is
+required; do not make either mount broadly readable to solve a service-package
+integration problem.
+
+For CIFS subdirectory mounts, prefer including the service subdirectory in the
+UNC source, as shown in `What=`, when the NAS and client support it. In practice
+this can be more reliable than mounting the share root and supplying the
+subpath only through an option such as `prefixpath=`. If one form fails, test
+the other against the same narrow server ACL; do not fall back to a broadly
+accessible parent mount.
+
+Before using the mounts, test both positive and negative access as the real
+service identities:
+
+- Kiwix can read a known ZIM and `library.xml`, but cannot create, replace, or
+  remove a file on its mount.
+- Kolibri can create, read, and remove a disposable probe only inside its
+  content mount.
+- Kiwix cannot traverse the Kolibri mount, and Kolibri cannot traverse the
+  Kiwix mount.
+- Each NAS principal is denied the other subtree even from a client that is not
+  relying on the local Unix modes.
+
+### Mount-Gated Services
+
+Add a separate drop-in to each service so systemd starts the corresponding
+mount first and fails closed when it is unavailable:
+
+```ini
+[Unit]
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=<service-mount>
+ConditionPathIsMountPoint=<service-mount>
+```
+
+Use the Kiwix mount in the Kiwix drop-in and the Kolibri content mount in the
+Kolibri drop-in. Inspect the effective units with `systemctl cat` and
+`systemctl show`; do not assume the package's service name, user, group, or
+existing dependency graph. After changing a unit or `[Paths] CONTENT_DIR`, run
+`systemctl daemon-reload` and the service's configuration validation where one
+exists.
+
+With the NAS available at boot, each service should start only after its mount
+is active. With the NAS unavailable, the mount attempt should time out within
+the local policy, each dependent content service should remain inactive or
+failed, and the rest of the host—including the operator's recovery path—should
+still boot. Do not silently serve an unmounted empty directory or
+automatically switch to a stale local corpus. After storage returns, start or
+verify the mounts, restart the services, and repeat deep-content validation.
+
+### Reversible Cutover
+
+1. Record the effective service identities, local paths, mount paths, current
+   Kiwix library count, selected archive IDs, Kolibri channel/resource
+   inventory, and representative content checksums in a host-private change
+   record.
+2. Back up Kolibri's local application database and other live state. Confirm
+   both local corpora are healthy before copying; a damaged source is not
+   rollback data.
+3. Create the two narrow server-side ACLs and mount definitions. Complete the
+   positive and negative permission tests before copying content.
+4. Copy Kiwix corpus data into its promoted read-only namespace and Kolibri
+   content into its writable content namespace. Quiesce Kolibri for the final
+   synchronization, and quiesce any Kiwix catalog mutation before its final
+   synchronization.
+5. Compare expected file inventories, byte sizes, and recorded checksums.
+   Treat a dry-run copy comparison as extra evidence, not a substitute for
+   integrity checks.
+6. Point Kiwix at the mounted library and set only Kolibri
+   `[Paths] CONTENT_DIR` to its mounted content. Add the mount dependencies,
+   reload systemd, and start the mounts and services.
+7. Run the deep validation below from the service host and from an intended LAN
+   client. Also exercise NAS loss and recovery before declaring the cutover
+   operational.
+8. Leave the local corpus and Kolibri content copy intact but inactive until an
+   operator confirms normal LAN behavior, the expected inventory, real content
+   responses, and rollback readiness. Reclamation is a separate,
+   explicitly-authorized operation after checksum comparison and independent
+   backup review.
+
+For rollback, stop the affected service, restore its previous local path and
+unit configuration, reload systemd, start it against the preserved local copy,
+and repeat the same inventory and deep-content tests. Roll back Kiwix and
+Kolibri independently; a fault in one service must not require changing the
+other.
+
+### Deep-Content Validation
+
+Homepage success proves only that a web process or proxy answered. The cutover
+does not pass unless all four content checks below succeed:
+
+1. **Kiwix OPDS inventory:** fetch `/catalog/v2/root.xml` and
+   `/catalog/v2/entries?count=-1`, compare the entry count with `library.xml`,
+   and assert that at least one expected archive ID is present. Follow the path
+   and OPDS procedure in `runbooks/offline-knowledge-reservoir.md`.
+2. **Real Kiwix archive response:** fetch a known article route from a selected
+   archive, require a successful response and non-empty body, and confirm an
+   expected article marker. Do not substitute the Kiwix root page.
+3. **Kolibri channel inventory:** query the installed version's channel API or
+   supported management command, require the expected channel ID, and compare
+   its resource or node count with the pre-cutover inventory. Kolibri's
+   internal API can change, so discover the route from the installed version
+   rather than embedding one version's private endpoint in automation.
+4. **Real Kolibri asset response:** select a known imported document,
+   thumbnail, exercise, or HTML5 asset from that inventory; fetch its actual
+   content URL; require a successful response, non-zero expected size or
+   checksum, and the expected content type. Do not substitute the landing or
+   learn page.
+
+Repeat these checks from a client on the intended trusted LAN boundary. Then
+unavailable-NAS scenario review should make checks 1 through 4 fail rather than
+returning convincing but content-free homepages. After restoring the NAS,
+require all four to pass again without widening either service's permissions.
+
 ## Backups And Retention
 
 Separate agent brain backups from bulky corpora:
@@ -192,3 +368,4 @@ Use this quick review before approving a shared-storage change:
 - [RYA-74 - Harden Linear worker for long-running resumable downloads and network loss](https://linear.app/ryan-hayward/issue/RYA-74/harden-linear-worker-for-long-running-resumable-downloads-and-network)
 - [RYA-75 - Update shared long-running Kiwix download guidance for aria2/systemd logging](https://linear.app/ryan-hayward/issue/RYA-75/update-shared-long-running-kiwix-download-guidance-for-aria2systemd)
 - [RYA-77 - Document Offline Reservoir NAS/Mnemosyne shared-storage model](https://linear.app/ryan-hayward/issue/RYA-77/document-offline-reservoir-nasmnemosyne-shared-storage-model)
+- [RYA-205 - Document NAS-backed Kiwix and Kolibri split-storage cutover procedure](https://linear.app/ryan-hayward/issue/RYA-205/document-nas-backed-kiwix-and-kolibri-split-storage-cutover-procedure)
