@@ -89,6 +89,8 @@ This repo should contain reusable agent knowledge:
 - agent email identity safety;
 - bootstrap failure and recovery lessons;
 - Kiwix-first offline knowledge reservoir setup for local agents and humans;
+- read-only static document and ebook serving with machine-readable catalogs
+  and separately owned upload staging;
 - NAS-backed Offline Reservoir sharing, ordinary-agent write boundaries, and
   Mnemosyne-style storage ownership;
 - wake-word, post-wake transcription, and command-confirmation architecture for

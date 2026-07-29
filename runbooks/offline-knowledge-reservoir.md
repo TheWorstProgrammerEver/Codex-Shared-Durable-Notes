@@ -9,6 +9,11 @@ For multi-agent NAS-backed sharing, least-privilege mounts, ordinary-agent
 write namespaces, and Mnemosyne-style promotion ownership, also read
 `runbooks/offline-reservoir-shared-storage.md`.
 
+For a non-ZIM EPUB, PDF, manual, or local-document corpus, use the read-only
+static HTTP baseline, catalog contract, isolated-client validation, and
+WebDAV/Calibre escalation rules in
+`runbooks/offline-static-document-library.md`.
+
 ## Kiwix Or Internet-in-a-Box
 
 Choose Kiwix when the target is:
@@ -56,7 +61,7 @@ Use this split before adding anything beyond Kiwix:
 | --- | --- | --- |
 | Kolibri courseware | Preferred next education/courseware candidate for lessons, quizzes, facility state, and offline channel imports. | Start with one small channel or subset, bind to a trusted LAN or localhost path, keep it on a non-conflicting service port, record channel provenance and refresh cadence, and plan backup of its application state before treating it as canonical. |
 | Zimit or Browsertrix captures | Targeted docs, manuals, or narrow sites that are not already available as suitable ZIMs. | Require a safe-crawl policy before each job: source approval, license/terms review, scope allowlist, depth/URL rules, rate limits, storage and time caps, detached job logs/state, and post-crawl validation of the produced ZIM/WARC/WACZ before publication. Do not run an open-ended crawler from the reservoir host. |
-| Static documents and ebooks | PDFs, manuals, public-domain ebooks, local operator documents, and non-ZIM artifacts that only need browse/download plus catalog metadata. | Start read-mostly with static HTTP or an index page plus a machine-readable catalog. Add tools such as Calibre only when library metadata/search needs justify another service. Keep mutable ingestion separate from served canonical content. |
+| Static documents and ebooks | PDFs, manuals, public-domain ebooks, local operator documents, and non-ZIM artifacts that only need browse/download plus catalog metadata. | Follow `runbooks/offline-static-document-library.md`: serve only approved content through read-only static HTTP, publish a machine-readable catalog and schema, and add Calibre only when ebook-specific metadata/search workflows justify another service. |
 | WebDAV staging | Controlled uploads or proposals from approved humans or agents. | Treat WebDAV as a narrow staging namespace, not canonical truth. Use authentication, quotas, malware/content review where appropriate, backups, cleanup policy, and owner-approved promotion into the read-mostly library. |
 | Agent/developer support pack | Offline docs, runbooks, small wheel/tarball sets, package lists, checksummed installers, or limited package-cache seeds for local agent recovery. | Start curated and manifest-driven. Avoid full package, container, model, or language-registry mirrors until storage, freshness, license, and operational ownership are explicitly justified. |
 | Nextcloud-style collaboration | Sync, sharing, comments, office workflows, or multi-user collaboration. | Defer from the managed host unless a later issue explicitly accepts the database, container, auth, update, TLS/domain, and backup surface. Prefer a separate NAS or collaboration appliance path. |
