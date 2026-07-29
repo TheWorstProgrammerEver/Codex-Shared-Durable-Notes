@@ -18,6 +18,35 @@ Use a simple first phase to install minimum prerequisites:
 Then let Codex or the setup framework complete higher-level configuration using
 runbooks and skills.
 
+## Codex Npm Runtime Path
+
+Fixing npm's global prefix and an interactive shell's `PATH` does not prove that
+a non-login service or timer can launch Codex. For the target service account:
+
+- confirm `npm config get prefix`, `command -v codex`, and `codex --version`
+  interactively;
+- configure the service `PATH` with the user-owned npm global `bin` directory
+  before root-owned binary directories, or set `CODEX_BIN` to the resolved
+  absolute Codex executable path;
+- do not rely on shell startup files or unverified `$HOME` expansion in a
+  generated unit or environment file.
+
+Exercise the same lookup with a minimal non-login environment. For example:
+
+```bash
+USER_NPM_BIN="$(npm config get prefix)/bin"
+env -i PATH="${USER_NPM_BIN}:/usr/local/bin:/usr/bin:/bin" \
+  sh -c 'command -v codex && codex --version'
+
+CODEX_BIN="$(command -v codex)"
+env -i CODEX_BIN="${CODEX_BIN}" PATH=/usr/bin:/bin \
+  sh -c 'test -x "$CODEX_BIN" && "$CODEX_BIN" --version'
+```
+
+Run this validation as the account used by the service. If the real unit still
+fails, inspect its effective environment and executable resolution rather than
+assuming the interactive shell result applies.
+
 ## Image And Media Validation
 
 When preparing removable boot media:
