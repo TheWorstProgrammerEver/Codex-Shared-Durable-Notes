@@ -35,6 +35,8 @@ Durable Notes skill hierarchy.
   cache/mirror escalation boundaries.
 - `runbooks/offline-reservoir-shared-storage.md` - NAS-backed Offline Reservoir
   permission, proposal, promotion, and Mnemosyne ownership model.
+- `runbooks/storage-owner-hardware-and-inference.md` - trial-first custody-host
+  selection, accelerator deferral, split-inference boundaries, and validation.
 - `runbooks/local-agent-voice-activation.md` - wake-word, STT, and safety
   architecture for microphone-enabled local agents.
 

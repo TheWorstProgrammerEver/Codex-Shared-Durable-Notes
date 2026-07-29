@@ -97,6 +97,8 @@ This repo should contain reusable agent knowledge:
   closures, per-platform capability validation, and explicit lifecycle policy;
 - NAS-backed Offline Reservoir sharing, ordinary-agent write boundaries, and
   Mnemosyne-style storage ownership;
+- trial-first storage-owner hardware selection, custody/inference separation,
+  and measured accelerator escalation;
 - wake-word, post-wake transcription, and command-confirmation architecture for
   microphone-enabled local agents.
 

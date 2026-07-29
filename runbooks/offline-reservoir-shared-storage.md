@@ -147,6 +147,10 @@ where practical, and periodically restore-tested. Record credential storage
 locations and revocation/rotation procedures only as metadata; never store
 secret values in shared notes.
 
+For custody-host selection, trial-first validation, and the boundary between
+storage ownership and accelerated local inference, use
+`runbooks/storage-owner-hardware-and-inference.md`.
+
 ## Guardrails
 
 - Do not record NAS credentials, private keys, passwords, recovery codes, mount
