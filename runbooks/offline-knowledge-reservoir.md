@@ -143,6 +143,16 @@ during a low-activity window, then repeat content and offline-client checks.
 Stop Kolibri before package upgrades and retain a restorable pre-upgrade
 database backup.
 
+The serving host does not have to own the channel payload. For NAS-backed
+content, follow `runbooks/offline-reservoir-shared-storage.md` and Kolibri's
+current `content movedirectory` procedure. Keep database, configuration, cache,
+and runtime state on suitable local storage unless a separately tested design
+says otherwise; grant only one Kolibri service identity write access to channel
+content, make startup depend on the mount, and have ordinary clients use HTTP
+rather than modify the payload. Validate mount failure, reboot recovery,
+inventory, checksums, and representative content before retiring the local
+copy.
+
 Do not accept a loopback-only smoke test as proof of offline use. Connect a
 client with a route only to the trusted service network and no public default
 route or public DNS, or use an equivalent isolated network namespace. From that
