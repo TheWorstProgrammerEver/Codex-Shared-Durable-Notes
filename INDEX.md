@@ -24,6 +24,9 @@ Durable Notes skill hierarchy.
 - `runbooks/bootstrap-recovery-lessons.md` - fresh-host setup and recovery notes.
 - `runbooks/offline-knowledge-reservoir.md` - Kiwix-first offline knowledge
   library setup for local agents and humans.
+- `runbooks/offline-static-document-library.md` - read-only static HTTP,
+  catalog, staging boundary, validation, escalation, and rollback pattern for
+  non-ZIM documents and ebooks.
 - `runbooks/offline-reservoir-shared-storage.md` - NAS-backed Offline Reservoir
   permission, proposal, promotion, and Mnemosyne ownership model.
 - `runbooks/local-agent-voice-activation.md` - wake-word, STT, and safety
