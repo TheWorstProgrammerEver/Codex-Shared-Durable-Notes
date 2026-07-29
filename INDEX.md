@@ -27,6 +27,9 @@ Durable Notes skill hierarchy.
 - `runbooks/offline-static-document-library.md` - read-only static HTTP,
   catalog, staging boundary, validation, escalation, and rollback pattern for
   non-ZIM documents and ebooks.
+- `runbooks/offline-developer-support-pack.md` - curated offline developer
+  docs, package closures, manifest schema, validation, refresh, pruning, and
+  cache/mirror escalation boundaries.
 - `runbooks/offline-reservoir-shared-storage.md` - NAS-backed Offline Reservoir
   permission, proposal, promotion, and Mnemosyne ownership model.
 - `runbooks/local-agent-voice-activation.md` - wake-word, STT, and safety

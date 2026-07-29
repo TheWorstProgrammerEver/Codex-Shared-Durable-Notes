@@ -91,6 +91,8 @@ This repo should contain reusable agent knowledge:
 - Kiwix-first offline knowledge reservoir setup for local agents and humans;
 - read-only static document and ebook serving with machine-readable catalogs
   and separately owned upload staging;
+- curated offline agent/developer support packs with checksummed package
+  closures, per-platform capability validation, and explicit lifecycle policy;
 - NAS-backed Offline Reservoir sharing, ordinary-agent write boundaries, and
   Mnemosyne-style storage ownership;
 - wake-word, post-wake transcription, and command-confirmation architecture for

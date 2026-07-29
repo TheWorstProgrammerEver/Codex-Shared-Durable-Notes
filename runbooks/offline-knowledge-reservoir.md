@@ -14,6 +14,11 @@ static HTTP baseline, catalog contract, isolated-client validation, and
 WebDAV/Calibre escalation rules in
 `runbooks/offline-static-document-library.md`.
 
+For a curated offline set of agent/developer documentation, wheels, npm
+tarballs, recovery helpers, and package closures, use the layout, manifest,
+validation, refresh, and cache-escalation rules in
+`runbooks/offline-developer-support-pack.md`.
+
 ## Kiwix Or Internet-in-a-Box
 
 Choose Kiwix when the target is:
@@ -63,7 +68,7 @@ Use this split before adding anything beyond Kiwix:
 | Zimit or Browsertrix captures | Targeted docs, manuals, or narrow sites that are not already available as suitable ZIMs. | Require a safe-crawl policy before each job: source approval, license/terms review, scope allowlist, depth/URL rules, rate limits, storage and time caps, detached job logs/state, and post-crawl validation of the produced ZIM/WARC/WACZ before publication. Do not run an open-ended crawler from the reservoir host. |
 | Static documents and ebooks | PDFs, manuals, public-domain ebooks, local operator documents, and non-ZIM artifacts that only need browse/download plus catalog metadata. | Follow `runbooks/offline-static-document-library.md`: serve only approved content through read-only static HTTP, publish a machine-readable catalog and schema, and add Calibre only when ebook-specific metadata/search workflows justify another service. |
 | WebDAV staging | Controlled uploads or proposals from approved humans or agents. | Treat WebDAV as a narrow staging namespace, not canonical truth. Use authentication, quotas, malware/content review where appropriate, backups, cleanup policy, and owner-approved promotion into the read-mostly library. |
-| Agent/developer support pack | Offline docs, runbooks, small wheel/tarball sets, package lists, checksummed installers, or limited package-cache seeds for local agent recovery. | Start curated and manifest-driven. Avoid full package, container, model, or language-registry mirrors until storage, freshness, license, and operational ownership are explicitly justified. |
+| Agent/developer support pack | Offline docs, runbooks, small wheel/tarball sets, package lists, checksummed installers, or limited package-cache seeds for local agent recovery. | Follow `runbooks/offline-developer-support-pack.md`: start with a curated static generation, validate every advertised package capability and platform closure offline, and treat warmed cache services or full mirrors as separate operational decisions. |
 | Nextcloud-style collaboration | Sync, sharing, comments, office workflows, or multi-user collaboration. | Defer from the managed host unless a later issue explicitly accepts the database, container, auth, update, TLS/domain, and backup surface. Prefer a separate NAS or collaboration appliance path. |
 | IIAB, offspot, or hotspot appliance | Classroom/community-library mode, captive portal, no-LAN access, dashboards, and AP/DHCP/DNS/firewall ownership. | Keep this as a separate image, device, or appliance boundary by default. Do not blend hotspot/network ownership into a Codex-managed host that depends on existing SSH, systemd, and LAN recovery paths. |
 
