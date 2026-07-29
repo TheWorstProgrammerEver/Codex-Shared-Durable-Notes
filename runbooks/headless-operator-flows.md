@@ -1,7 +1,41 @@
 # Headless Operator Flows
 
-Headless agent hosts need predictable operator handoffs for SSH access, tmux
-attachment, and browser-based OAuth.
+Headless agent hosts need predictable operator handoffs for offline network
+recovery, SSH access, tmux attachment, and browser-based OAuth.
+
+## Offline Network Recovery
+
+Local recovery availability is a separate readiness requirement from ordinary
+SSH access. Before deploying or relocating a host:
+
+- Preserve and test a local console and local login that do not depend on the
+  current network path. Keep their host-specific details out of shared notes.
+- Ship the recovery tool, required runtime, network backend, and platform
+  instructions on the image. The flow must not need DNS, upstream access, or a
+  package download.
+- Read network secrets only through hidden input from the controlling terminal.
+  Do not place them in arguments, environment variables, shell history, logs,
+  state files, or diagnostic output.
+- Give the smallest privileged helper sole ownership of network-profile writes.
+  Replace profiles atomically with the platform's privileged owner and
+  private-only permissions (for example, owner `root` and mode `0600` on
+  POSIX systems).
+- Emit constant, redacted status messages and stable error codes. Do not expose
+  entered values, raw subprocess output, or profile contents on success or
+  failure.
+- Make the apply boundary explicit: write and validate the profile, ask for
+  operator confirmation when appropriate, then reload or restart the network
+  service. Verify local link and address readiness before testing SSH; lack of
+  upstream Internet access must not make local recovery appear to have failed.
+- Isolate recovery from resumable agent state. A network retry may touch only
+  its owned profile and network service; it must not delete, reset, advance, or
+  reinterpret unrelated job checkpoints.
+
+Keep exact commands and service names in the image or platform implementation
+documentation, and link that documentation from the host-local operator note.
+Do not copy platform-specific commands into this shared runbook. For one Linux
+image implementation, see the
+[Agent Boot Image CLI network-reconfiguration guide](https://github.com/TheWorstProgrammerEver/Agent-Boot-Image-CLI/blob/main/docs/operator/network-reconfiguration.md).
 
 ## SSH Access
 
