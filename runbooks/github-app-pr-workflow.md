@@ -38,6 +38,48 @@ plaintext credential values.
 8. Link the PR back to the tracking issue.
 9. Respond to review comments individually when practical.
 
+## Workflow-File Pushes
+
+Creating or changing a file under `.github/workflows/` requires a GitHub App
+installation token with the separate `workflows:write` permission. Keep the
+token repository-restricted and request only the normal PR permissions plus
+that additional permission.
+
+`CODEX_GH_PERMISSIONS_JSON` and `CODEX_GH_REPO` are wrapper inputs, not Git
+settings. `codex-gh` forwards them for CLI and API operations. An older stock
+`codex-github-askpass` that invokes `codex-github-token` without arguments does
+not currently forward either value, so setting them around `git push` has no
+effect on the token it mints. Inspect or reinstall the current helper from the
+[Codex Agent Setup repository](https://github.com/TheWorstProgrammerEver/Codex-Agent-Setup/tree/main/github)
+before relying on this path. The current source-controlled askpass helper
+forwards both values; the default path remains unchanged when they are unset.
+
+First verify that the App can mint the narrow repository token. Request only an
+expiry timestamp so the token value is never printed:
+
+```bash
+codex-github-token \
+  --repo OWNER/REPO \
+  --permissions-json '{"contents":"write","pull_requests":"write","workflows":"write"}' \
+  --expires-at
+```
+
+Then exercise the exact branch ref with an authenticated dry run:
+
+```bash
+CODEX_GH_REPO=OWNER/REPO \
+CODEX_GH_PERMISSIONS_JSON='{"contents":"write","pull_requests":"write","workflows":"write"}' \
+GIT_TERMINAL_PROMPT=0 \
+GIT_ASKPASS="$(command -v codex-github-askpass)" \
+  git push --dry-run origin HEAD:refs/heads/BRANCH
+```
+
+After the dry run succeeds, repeat the command without `--dry-run` to push the
+branch. Keep the overrides scoped to these commands. Do not put the token in a
+shell variable, command argument, remote URL, log, or temporary credential
+file. Ordinary branches without workflow changes should continue through the
+default askpass path without the two override variables.
+
 ## Empty Repository Bootstrap
 
 A pull request needs an existing base branch. If a repo has no commits and no
