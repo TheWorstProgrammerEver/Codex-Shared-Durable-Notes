@@ -10,6 +10,10 @@ Kiwix is the first serving layer. The durable system is broader: curated
 corpora, provenance, refresh policy, catalogs, retrieval surfaces, backups,
 snapshots, and owner-approved promotion into canonical storage.
 
+For a separate community-library appliance that copies an approved read-only
+export, owns its client network, and promotes only its local staged release, use
+`runbooks/offline-community-library-appliance.md`.
+
 ## Default Boundary
 
 - Approved shared corpora, Kiwix ZIM archives, catalogs, public docs, and
@@ -113,6 +117,9 @@ Two serving patterns are acceptable:
 - Individual agent hosts run local `kiwix-serve` instances against read-only NAS
   mounts and depend on the mount through systemd or equivalent service
   ordering.
+- Separate community-library appliances consume a read-only export into local
+  staging, validate it independently, and atomically promote a local release so
+  field use does not depend on NAS availability.
 
 In either pattern, do not let a local serving process become an implicit owner
 of canonical archives. Refreshes remain full replacement events with staging,
