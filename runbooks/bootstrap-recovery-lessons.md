@@ -229,6 +229,60 @@ Do not bake these into images or public repositories:
 Use local-only configuration files, prompts, or operator handoffs, and record
 only metadata in durable notes.
 
+### Byte-Exact Image-Recipe Inputs
+
+Treat every local secret file as a byte-level input whose format comes from the
+recipe schema. Scalar account passwords, Wi-Fi passphrases, API keys, and
+similar literals normally must not contain a line ending. Write them with
+`printf %s`; `echo`, `printf '%s\n'`, and here-documents usually append a
+newline and therefore change the credential.
+
+For example, a Bash operator flow can prompt without echo, create the file with
+private permissions, and validate its byte count and newline-free shape without
+printing the value:
+
+```bash
+umask 077
+IFS= read -r -s -p 'Secret value: ' secret_value
+printf '\n' >&2
+
+expected_bytes="$(printf %s "$secret_value" | wc -c)"
+printf %s "$secret_value" >"$secret_file"
+unset secret_value
+
+actual_bytes="$(wc -c <"$secret_file")"
+bytes_without_line_endings="$(
+  LC_ALL=C tr -d '\015\012' <"$secret_file" | wc -c
+)"
+
+if [ "$actual_bytes" -ne "$expected_bytes" ] ||
+   [ "$bytes_without_line_endings" -ne "$actual_bytes" ]; then
+  printf '%s\n' 'secret file shape is invalid' >&2
+  exit 1
+fi
+
+unset expected_bytes actual_bytes bytes_without_line_endings
+```
+
+Keep secret values out of command arguments, logs, issue comments, pull
+requests, and durable notes. The validation may report only a stable result,
+byte counts when operationally useful, or a generic failure; it must not print
+the file contents or a content-derived fingerprint.
+
+Do not apply the scalar newline check to structured credentials that
+legitimately contain line breaks, such as PEM certificates or private keys.
+Preserve those source bytes exactly and validate against their format and an
+independently trusted size or digest. Avoid shell command substitution for
+multiline sources because it removes trailing newlines.
+
+When an image adapter unexpectedly reports an invalid initial account password
+or passphrase, first check for a trailing carriage return or newline introduced
+by the file-creation method. Recreate the local input byte-exactly and rerun
+non-secret validation before retrying customization.
+
+Source learning:
+[RYA-196 - [Agent Boot] Document byte-exact secret file handling for image recipes](https://linear.app/ryan-hayward/issue/RYA-196/agent-boot-document-byte-exact-secret-file-handling-for-image-recipes).
+
 ## Recovery Signals
 
 Bootstrap scripts and services should leave inspectable state:
