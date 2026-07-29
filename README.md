@@ -89,6 +89,8 @@ This repo should contain reusable agent knowledge:
 - agent email identity safety;
 - bootstrap failure and recovery lessons;
 - Kiwix-first offline knowledge reservoir setup for local agents and humans;
+- separate community-library appliance boundaries for AP/DHCP/DNS, captive
+  portal, dashboard, content sync, and field operations;
 - read-only static document and ebook serving with machine-readable catalogs
   and separately owned upload staging;
 - curated offline agent/developer support packs with checksummed package

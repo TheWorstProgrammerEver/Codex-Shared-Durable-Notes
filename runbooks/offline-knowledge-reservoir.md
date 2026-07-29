@@ -9,6 +9,12 @@ For multi-agent NAS-backed sharing, least-privilege mounts, ordinary-agent
 write namespaces, and Mnemosyne-style promotion ownership, also read
 `runbooks/offline-reservoir-shared-storage.md`.
 
+For a community-library appliance that owns Wi-Fi AP, DHCP, DNS, captive
+portal, dashboard, and multiple learning services, use
+`runbooks/offline-community-library-appliance.md`. Keep that role on a separate
+image and device rather than installing hotspot networking over a Codex-managed
+host.
+
 For a non-ZIM EPUB, PDF, manual, or local-document corpus, use the read-only
 static HTTP baseline, catalog contract, isolated-client validation, and
 WebDAV/Calibre escalation rules in
@@ -70,7 +76,7 @@ Use this split before adding anything beyond Kiwix:
 | WebDAV staging | Controlled uploads or proposals from approved humans or agents. | Treat WebDAV as a narrow staging namespace, not canonical truth. Use authentication, quotas, malware/content review where appropriate, backups, cleanup policy, and owner-approved promotion into the read-mostly library. |
 | Agent/developer support pack | Offline docs, runbooks, small wheel/tarball sets, package lists, checksummed installers, or limited package-cache seeds for local agent recovery. | Follow `runbooks/offline-developer-support-pack.md`: start with a curated static generation, validate every advertised package capability and platform closure offline, and treat warmed cache services or full mirrors as separate operational decisions. |
 | Nextcloud-style collaboration | Sync, sharing, comments, office workflows, or multi-user collaboration. | Defer from the managed host unless a later issue explicitly accepts the database, container, auth, update, TLS/domain, and backup surface. Prefer a separate NAS or collaboration appliance path. |
-| IIAB, offspot, or hotspot appliance | Classroom/community-library mode, captive portal, no-LAN access, dashboards, and AP/DHCP/DNS/firewall ownership. | Keep this as a separate image, device, or appliance boundary by default. Do not blend hotspot/network ownership into a Codex-managed host that depends on existing SSH, systemd, and LAN recovery paths. |
+| IIAB, offspot, or hotspot appliance | Classroom/community-library mode, captive portal, no-LAN access, dashboards, and AP/DHCP/DNS/firewall ownership. | Follow `runbooks/offline-community-library-appliance.md`. Keep this as a separate image, device, or appliance boundary by default. Do not blend hotspot/network ownership into a Codex-managed host that depends on existing SSH, systemd, and LAN recovery paths. |
 
 ## Safe Website Capture Workflow
 
