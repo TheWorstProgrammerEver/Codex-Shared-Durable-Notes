@@ -78,6 +78,77 @@ tmux and leave state/log paths in Linear before yielding. For Kiwix/ZIM
 downloads specifically, follow the detached `aria2c` guidance in
 `runbooks/offline-knowledge-reservoir.md`.
 
+## Codex Execution Authentication Recovery
+
+Treat the worker's two authentication boundaries independently:
+
+- Linear API authentication lets the poller read, claim, comment on, and change
+  issues.
+- OpenAI Codex execution authentication lets the spawned `codex exec` process
+  start an agent session.
+
+A healthy timer, a successful Linear claim, or `codex login status` does not
+prove that a non-interactive Codex process can authenticate in the service
+environment. Before requeueing work after an authentication incident:
+
+1. Stop automatic claims while preserving evidence. Stop the timer, but do not
+   kill an active service or Codex child solely because another launch failed.
+2. Inspect the service and timer status, service main PID, and recent journal.
+   Resolve the configured service user, working directory, environment-file
+   path, Codex binary, Codex working directory, and state directory without
+   printing environment-file contents.
+3. Inspect `current.json`, then verify its PID with `ps` or `kill -0`. Treat a
+   live matching process as active work and leave both its local state and
+   Linear issue unchanged. If local state is absent or stale, inspect the
+   per-issue log and process table before changing the issue.
+4. Run `codex login status` as the service user for orientation, then run a
+   tiny, non-interactive `codex exec` smoke test through the same systemd user,
+   working directory, environment file, Codex binary, and Codex working
+   directory. Use a non-mutating sandbox and a prompt such as “Reply with
+   exactly OK.” Do not claim or requeue issues until this succeeds.
+5. Classify every stranded claim from its own log and state evidence. Requeue
+   only when the log proves the Codex session failed during authentication
+   before any tool activity or repository/external mutation. Add a signed
+   Linear comment that records the reason and recovery action.
+6. If the log is missing, ambiguous, or shows any agent/tool activity, do not
+   requeue automatically. Leave the issue in its current active state while a
+   live process exists; otherwise move it to `Blocked` for operator review.
+7. Restart the timer only after the smoke test succeeds and all stale claims
+   have been classified. Do not disturb active current-state workers that
+   survived the incident.
+
+Useful read-only inspection commands, with deployment-specific unit and path
+values substituted, include:
+
+```bash
+systemctl status <worker.service> <worker.timer> --no-pager
+systemctl show <worker.service> \
+  --property=ActiveState,SubState,MainPID,User,WorkingDirectory,EnvironmentFiles,ExecStart
+journalctl -u <worker.service> --since <incident-start> --no-pager
+sed -n '1,160p' <state-directory>/current.json
+ps -fp <current-json-pid>
+tail -n 200 <per-issue-log>
+```
+
+For a system service, a transient unit can reproduce the relevant execution
+context without exposing credential values:
+
+```bash
+sudo -u <service-user> <codex-bin> login status
+sudo systemd-run --wait --pipe --collect \
+  --unit=codex-exec-auth-smoke \
+  --uid=<service-user> \
+  --working-directory=<codex-working-directory> \
+  --property=EnvironmentFile=<worker-environment-file> \
+  <codex-bin> exec --skip-git-repo-check --sandbox read-only \
+  "Reply with exactly OK."
+```
+
+Adapt the smoke command to the installed Codex CLI and unit type. If the worker
+is a user service, use its user-manager context instead of a system transient
+unit. The important validation is the real non-interactive execution path, not
+the exact command spelling.
+
 ## Credentials
 
 - Use a dedicated Linear API key for unattended pollers.
@@ -86,3 +157,8 @@ downloads specifically, follow the detached `aria2c` guidance in
 - Do not store it in git, durable notes, comments, logs, or issue descriptions.
 - Use Linear MCP OAuth for interactive sessions, and complete OAuth as a
   post-boot operator step on fresh hosts.
+
+## Related Work
+
+- [RYA-173 - Document and harden Linear worker recovery for Codex exec auth failures](https://linear.app/ryan-hayward/issue/RYA-173/document-and-harden-linear-worker-recovery-for-codex-exec-auth)
+- [RYA-213 - Harden Linear delegator recovery for immediate Codex exec auth failures](https://linear.app/ryan-hayward/issue/RYA-213/harden-linear-delegator-recovery-for-immediate-codex-exec-auth)
