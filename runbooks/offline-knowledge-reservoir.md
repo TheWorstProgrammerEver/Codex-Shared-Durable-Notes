@@ -62,6 +62,109 @@ Use this split before adding anything beyond Kiwix:
 | Nextcloud-style collaboration | Sync, sharing, comments, office workflows, or multi-user collaboration. | Defer from the managed host unless a later issue explicitly accepts the database, container, auth, update, TLS/domain, and backup surface. Prefer a separate NAS or collaboration appliance path. |
 | IIAB, offspot, or hotspot appliance | Classroom/community-library mode, captive portal, no-LAN access, dashboards, and AP/DHCP/DNS/firewall ownership. | Keep this as a separate image, device, or appliance boundary by default. Do not blend hotspot/network ownership into a Codex-managed host that depends on existing SSH, systemd, and LAN recovery paths. |
 
+## Safe Website Capture Workflow
+
+Use site capture only when a suitable official ZIM or other redistributable
+offline artifact is unavailable. Public documentation and manual sites are the
+default allowed targets. Do not capture authenticated, personalized, private,
+paywalled, or user-generated areas without separate source-owner and operator
+approval.
+
+Before network crawling, record and review:
+
+- the canonical source URL and the exact approved page or URL-prefix scope;
+- the site's current terms, license, and redistribution conditions;
+- `robots.txt`, while remembering that robots permission does not replace
+  terms, copyright, privacy, or source-owner review;
+- official Kiwix catalog and publisher download options;
+- the staging target, final artifact name, and available free space for crawl
+  output, conversion copies, logs, and working headroom (for example,
+  `df -h -- /srv/offline-knowledge/incoming`);
+- the pinned crawler and converter image versions or digests.
+
+Start with a one-page test. For any approved prefix crawl, keep one worker,
+zero extra hops, a low page limit, explicit time and byte limits, and a clear
+user-agent suffix with operator or project contact information. Increase one
+limit at a time only after reviewing the test crawl, server responses, skipped
+pages, replay quality, and remaining storage. Do not use `host`, `domain`, or
+`any` scope as a default.
+
+The following is a conservative shape, not a universal authorization or a
+production-ready copy-and-paste command:
+
+```bash
+docker run --rm \
+  -v "$PWD/crawls:/crawls" \
+  webrecorder/browsertrix-crawler:APPROVED_VERSION crawl \
+  --url https://docs.example.org/manual/start \
+  --collection docs-example-test \
+  --scopeType page \
+  --workers 1 \
+  --pageLimit 25 \
+  --timeLimit 900 \
+  --sizeLimit 268435456 \
+  --extraHops 0 \
+  --userAgentSuffix "+OfflineDocsArchive contact@example.org" \
+  --useRobots \
+  --reportSkipped \
+  --generateWACZ
+```
+
+For a prefix crawl, replace `page` only after approving the exact prefix and
+any required exclusion rules. Treat `25` pages, 15 minutes, and 256 MiB as
+small initial ceilings, not targets or generally safe production limits. Stop
+on sustained rate limiting, unexpected scope expansion, terms ambiguity, or
+material source load.
+
+Use the artifact path that matches the intended reader:
+
+1. Run a pinned current
+   [Browsertrix Crawler](https://crawler.docs.browsertrix.com/) image directly
+   when robots-aware network crawling and high-fidelity replay are required.
+   Preserve its WARC files, logs, page reports, crawl configuration, and WACZ.
+2. Validate the WACZ in a replay reader and inspect representative start,
+   navigation, asset, search, and JavaScript-heavy pages. Record gaps rather
+   than assuming a successful process exit means a complete replay.
+3. When Kiwix is the desired reader, convert the preserved WARC with
+   [`warc2zim`](https://github.com/openzim/warc2zim) from an approved pinned
+   [Zimit](https://github.com/openzim/zimit) image. Do not recrawl merely to
+   obtain a ZIM.
+
+Do not assume the Zimit wrapper exposes every option supported by its bundled
+Browsertrix version. In the validated Zimit 3.1.2 and Browsertrix 1.13.2
+combination, Zimit help did not expose Browsertrix's `--useRobots` flag, while
+the direct Browsertrix image did. Inspect the help for the exact pinned images
+before every workflow change; if robots handling cannot be explicitly enabled
+and verified, use Browsertrix directly for capture and Zimit only for
+WARC-to-ZIM conversion.
+
+Keep every new capture in staging until it is:
+
+- complete within its approved scope, with important pages replay-tested;
+- redistributable under recorded license and terms evidence;
+- checked for unexpected private or personalized content;
+- checksummed, cataloged, and assigned a refresh or expiry policy;
+- validated as a ZIM when it is destined for Kiwix.
+
+Only then promote the ZIM through the existing manifest, `kiwix-manage`,
+library-path, OPDS-count, selected-ID, and article smoke-test workflow. An
+incomplete or non-redistributable WARC/WACZ may remain a restricted preservation
+artifact; it must not enter the served Kiwix corpus.
+
+For each capture, record the source URL, crawl date, tool versions and image
+digests, scope and exclusion rules, worker/page/time/size/extra-hop limits,
+output sizes and checksums, robots setting, license and terms notes, replay
+validation, conversion provenance, and refresh policy. Site terms can change,
+captures become stale, JavaScript-heavy pages can replay incompletely, and a
+mis-scoped crawl can create unintended load; every refresh therefore repeats
+preflight and starts from conservative limits.
+
+The Browsertrix
+[command-line options](https://crawler.docs.browsertrix.com/user-guide/cli-options/),
+[crawl-scope guide](https://crawler.docs.browsertrix.com/user-guide/crawl-scope/),
+and [output guide](https://crawler.docs.browsertrix.com/user-guide/outputs/)
+are the authoritative references for the exact pinned crawler version.
+
 ## Filesystem Layout
 
 Use a predictable service root such as `/srv/offline-knowledge`:
@@ -182,6 +285,9 @@ long as it is easy to parse. Include at least:
 - `license`: upstream license when available;
 - `provenance`: publisher, project, catalog, and any generation tool such as
   Zimit;
+- `crawl`: for a captured site, the source URL, crawl date, image
+  versions/digests, limits and scope, robots setting, WARC/WACZ checksums,
+  replay validation, terms notes, and WARC-to-ZIM conversion details;
 - `refresh_policy`: review cadence and replacement rule;
 - `notes`: operational caveats, including whether the file contains media.
 
