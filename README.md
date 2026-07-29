@@ -87,6 +87,8 @@ This repo should contain reusable agent knowledge:
 - credential metadata rules;
 - automated testing cleanup expectations;
 - agent email identity safety;
+- rail-agnostic agent payment authority, aggregate budgets, custody boundaries,
+  receipts, revocation, and staged rollout;
 - bootstrap failure and recovery lessons;
 - Kiwix-first offline knowledge reservoir setup for local agents and humans;
 - separate community-library appliance boundaries for AP/DHCP/DNS, captive

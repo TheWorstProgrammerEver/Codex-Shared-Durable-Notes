@@ -21,6 +21,8 @@ Durable Notes skill hierarchy.
 - `runbooks/headless-operator-flows.md` - SSH, tmux, and OAuth handoff patterns.
 - `runbooks/testing-cleanup-practices.md` - test isolation and cleanup checks.
 - `runbooks/agent-email-identity.md` - dedicated agent mailbox safety model.
+- `runbooks/agent-payment-authority.md` - rail-agnostic delegated payment
+  authority, budget, custody, audit, revocation, and rollout architecture.
 - `runbooks/bootstrap-recovery-lessons.md` - fresh-host setup and recovery notes.
 - `runbooks/offline-knowledge-reservoir.md` - Kiwix-first offline knowledge
   library setup for local agents and humans.
