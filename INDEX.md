@@ -25,7 +25,8 @@ Durable Notes skill hierarchy.
   action-broker boundary for credential-free LLM tool runtimes.
 - `runbooks/agent-payment-authority.md` - rail-agnostic delegated payment
   authority, budget, custody, audit, revocation, and rollout architecture.
-- `runbooks/bootstrap-recovery-lessons.md` - fresh-host setup and recovery notes.
+- `runbooks/bootstrap-recovery-lessons.md` - fresh-host setup, byte-exact image
+  recipe secret inputs, and recovery notes.
 - `runbooks/offline-knowledge-reservoir.md` - Kiwix-first offline knowledge
   library setup for local agents and humans.
 - `runbooks/offline-community-library-appliance.md` - separate-appliance
