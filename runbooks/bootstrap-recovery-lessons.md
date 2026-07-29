@@ -237,9 +237,10 @@ similar literals normally must not contain a line ending. Write them with
 `printf %s`; `echo`, `printf '%s\n'`, and here-documents usually append a
 newline and therefore change the credential.
 
-For example, a Bash operator flow can prompt without echo, create the file with
-private permissions, and validate its byte count and newline-free shape without
-printing the value:
+For example, this GNU/Linux Bash flow assumes `secret_file` names a file in a
+trusted operator-controlled directory. It prompts without echo, replaces an
+existing file or symlink with a private regular file, and validates the actual
+target's mode, byte count, and newline-free shape without printing the value:
 
 ```bash
 umask 077
@@ -247,21 +248,31 @@ IFS= read -r -s -p 'Secret value: ' secret_value
 printf '\n' >&2
 
 expected_bytes="$(printf %s "$secret_value" | wc -c)"
+if ! install -m 600 /dev/null "$secret_file"; then
+  unset secret_value expected_bytes
+  printf '%s\n' 'could not create private secret file' >&2
+  exit 1
+fi
+
 printf %s "$secret_value" >"$secret_file"
 unset secret_value
 
+file_mode="$(stat -c '%a' -- "$secret_file")"
 actual_bytes="$(wc -c <"$secret_file")"
 bytes_without_line_endings="$(
   LC_ALL=C tr -d '\015\012' <"$secret_file" | wc -c
 )"
 
-if [ "$actual_bytes" -ne "$expected_bytes" ] ||
+if [ ! -f "$secret_file" ] ||
+   [ -L "$secret_file" ] ||
+   [ "$file_mode" != 600 ] ||
+   [ "$actual_bytes" -ne "$expected_bytes" ] ||
    [ "$bytes_without_line_endings" -ne "$actual_bytes" ]; then
-  printf '%s\n' 'secret file shape is invalid' >&2
+  printf '%s\n' 'secret file permissions or shape are invalid' >&2
   exit 1
 fi
 
-unset expected_bytes actual_bytes bytes_without_line_endings
+unset expected_bytes file_mode actual_bytes bytes_without_line_endings
 ```
 
 Keep secret values out of command arguments, logs, issue comments, pull
