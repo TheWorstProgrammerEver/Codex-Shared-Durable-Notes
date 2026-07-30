@@ -26,6 +26,69 @@ plaintext credential values.
   checks, rulesets, and issue comments.
 - Request broad app permissions only when a command actually needs them.
 
+## Authorization Evidence
+
+Keep configuration and authorization checks separate. A successful check in
+one path does not prove that another path can write:
+
+- Minting a token expiry timestamp with the requested permissions proves that
+  the helper and App configuration can mint that token. It does not prove
+  repository selection or any write operation.
+- Listing the installation repositories proves that the installation includes
+  the selected repository. It does not prove the token's write scope or either
+  write transport.
+- Running `git push --dry-run` for the exact refspec proves that the Git
+  command, remote, source, destination, and negotiation are usable without
+  applying the ref update. It does not prove authorization for a real Git ref
+  update.
+- Pushing the real issue branch proves that Git HTTPS transport can create or
+  update that branch. It does not prove Git Database REST API write access.
+- Creating and deleting a ref through the Git Database REST API proves those
+  exact API writes. It does not prove Git HTTPS transport authorization.
+
+Treat `git push --dry-run` as a command and refspec preflight, not as write
+authorization evidence. A server can allow the dry run while rejecting the
+real ref update.
+
+Prefer the real issue-branch push as the narrowest useful Git transport check:
+
+```bash
+GIT_TERMINAL_PROMPT=0 \
+GIT_ASKPASS="$(command -v codex-github-askpass)" \
+  git push origin HEAD:refs/heads/ISSUE-BRANCH
+```
+
+If a separate API write probe is necessary, create one explicitly named
+disposable branch from the base branch's current commit, then remove it
+immediately. Use a unique `ISSUE-UTCSTAMP` suffix, record the exact generated
+name until cleanup succeeds, and never target the primary branch itself:
+
+```bash
+probe_ref="codex-write-probe-ISSUE-UTCSTAMP"
+probe_base_sha="$(
+  CODEX_GH_REPO=OWNER/REPO \
+  CODEX_GH_PERMISSIONS_JSON='{"contents":"write"}' \
+    codex-gh api repos/OWNER/REPO/git/ref/heads/BASE --jq .object.sha
+)"
+
+CODEX_GH_REPO=OWNER/REPO \
+CODEX_GH_PERMISSIONS_JSON='{"contents":"write"}' \
+  codex-gh api --silent -X POST repos/OWNER/REPO/git/refs \
+  -f ref="refs/heads/${probe_ref}" \
+  -f sha="${probe_base_sha}"
+
+CODEX_GH_REPO=OWNER/REPO \
+CODEX_GH_PERMISSIONS_JSON='{"contents":"write"}' \
+  codex-gh api --silent -X DELETE \
+  "repos/OWNER/REPO/git/refs/heads/${probe_ref}"
+```
+
+If creation succeeds but cleanup fails, stop and retry the exact delete before
+continuing. Do not broaden cleanup to a prefix or wildcard. Keep token values
+out of variables, command arguments, remote URLs, logs, and temporary
+credential files. This probe demonstrates API ref-write authorization only; it
+is not a fallback proof that Git HTTPS push is authorized.
+
 ## PR Flow
 
 1. Clone or update the repo.
@@ -64,7 +127,7 @@ codex-github-token \
   --expires-at
 ```
 
-Then exercise the exact branch ref with an authenticated dry run:
+Then preflight the exact branch ref with an authenticated dry run:
 
 ```bash
 CODEX_GH_REPO=OWNER/REPO \
@@ -74,11 +137,13 @@ GIT_ASKPASS="$(command -v codex-github-askpass)" \
   git push --dry-run origin HEAD:refs/heads/BRANCH
 ```
 
-After the dry run succeeds, repeat the command without `--dry-run` to push the
-branch. Keep the overrides scoped to these commands. Do not put the token in a
-shell variable, command argument, remote URL, log, or temporary credential
-file. Ordinary branches without workflow changes should continue through the
-default askpass path without the two override variables.
+Dry-run success validates the command and refspec but does not prove that
+GitHub will authorize the write. Repeat the command without `--dry-run` to
+perform the conclusive Git transport check by pushing the issue branch. Keep
+the overrides scoped to these commands. Do not put the token in a shell
+variable, command argument, remote URL, log, or temporary credential file.
+Ordinary branches without workflow changes should continue through the default
+askpass path without the two override variables.
 
 ## Empty Repository Bootstrap
 
@@ -140,6 +205,9 @@ git worktree prune
 
 - Failed token minting can leave empty shell variables and cause confusing
   authentication errors.
+- A successful `git push --dry-run` can be followed by a `403` on the real
+  update; diagnose token scope, repository selection, Git transport, and API
+  ref writes as separate boundaries.
 - PRs can be Git-mergeable while still ruleset-blocked.
 - Combined commit status may show pending when no checks exist; inspect the PR
   and ruleset directly when in doubt.
