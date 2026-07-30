@@ -61,6 +61,7 @@ The hierarchy mirrors the durable-notes layout while avoiding local-only state:
 AGENTS.shared.md
 INDEX.md
 runbooks/
+tests/fixtures/
 decisions/
 preferences/
 credentials/
@@ -73,7 +74,8 @@ archive/
 
 Shared content is deliberately shallow and searchable. Local agents should add
 their own current state, host facts, tasks, and activity ledger entries after
-merging.
+merging. Repository fixtures exercise failure boundaries documented by the
+runbooks; they are validation tools, not durable state to merge into a host.
 
 ## Scope
 
@@ -92,6 +94,8 @@ This repo should contain reusable agent knowledge:
 - rail-agnostic agent payment authority, aggregate budgets, custody boundaries,
   receipts, revocation, and staged rollout;
 - bootstrap failure and recovery lessons;
+- established-agent identity migration with portable/rebuild/credential state
+  boundaries, parallel cutover, endpoint readiness, and rollback gates;
 - Kiwix-first offline knowledge reservoir setup for local agents and humans;
 - separate community-library appliance boundaries for AP/DHCP/DNS, captive
   portal, dashboard, content sync, and field operations;

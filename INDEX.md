@@ -27,6 +27,8 @@ Durable Notes skill hierarchy.
   authority, budget, custody, audit, revocation, and rollout architecture.
 - `runbooks/bootstrap-recovery-lessons.md` - fresh-host setup, byte-exact image
   recipe secret inputs, and recovery notes.
+- `runbooks/agent-identity-migration.md` - host-neutral established-agent
+  identity restore across architectures or same-architecture replacements.
 - `runbooks/offline-knowledge-reservoir.md` - Kiwix-first offline knowledge
   library setup for local agents and humans.
 - `runbooks/offline-community-library-appliance.md` - separate-appliance
@@ -44,6 +46,12 @@ Durable Notes skill hierarchy.
   selection, accelerator deferral, split-inference boundaries, and validation.
 - `runbooks/local-agent-voice-activation.md` - wake-word, STT, and safety
   architecture for microphone-enabled local agents.
+
+## Validation Fixtures
+
+- `tests/fixtures/sqlite-index-corruption.sh` - proves a successful SQLite
+  backup can retain an inconsistent index, preserves the received artifact,
+  and validates a narrow repair without changing table rows.
 
 ## Durable Notes Areas
 

@@ -4,6 +4,13 @@ Fresh-host bootstrap should be supervised until it has succeeded on real
 hardware. Dry-runs and idempotence checks are valuable, but first boot exposes
 networking, image, firmware, package, and credential assumptions.
 
+This runbook covers fresh-host and image bootstrap. When moving an established
+agent identity, use
+[Agent Identity Migration Between Hosts](agent-identity-migration.md) for state
+classification, consistent snapshots, logical database checks, parallel
+cutover, rollback, and source retirement. A setup repository or boot image may
+create the clean target, but it does not replace that identity-restore process.
+
 ## Two-Phase Bootstrap
 
 Use a simple first phase to install minimum prerequisites:
