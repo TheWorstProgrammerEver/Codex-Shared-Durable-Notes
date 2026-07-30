@@ -84,6 +84,63 @@ writes, refuse restoring onto the disk that contains the backup source, and use
 a mounted destination volume only as an identity anchor for resolving the whole
 destination disk.
 
+### Reuse Formatting And Sanitization Claims
+
+Before changing preserved media, record whether the requested outcome is
+deployment-ready reuse or verified sanitization. Preserve and verify the backup
+first as required above. Then apply the stable-target authorization, locked
+identity rechecks, exact-write accounting, and cleanup contract in
+[RYA-174](https://linear.app/ryan-hayward/issue/RYA-174/hive-mind-add-fail-closed-destructive-device-guardrail-guidance).
+Those controls are prerequisites for destructive work, but do not by themselves
+prove that prior data was sanitized.
+
+Keep these claims distinct:
+
+- **Formatting** creates a partition table or filesystem, usually by replacing
+  only metadata. A clean filesystem plus a successful
+  mount/write/read/delete/check probe proves deployment readiness, not erasure
+  of prior bytes.
+- **Full overwrite** writes an explicit pattern across a documented
+  host-addressable whole-device range. Call it complete only when exact byte
+  counts match the revalidated device size, writes are flushed, the required
+  read-back or tool verification passes, and userspace plus kernel/device logs
+  show no transport or I/O failure during the operation.
+- **Cryptographic or device-native erase** uses a supported media mechanism.
+  Record why the mechanism applies, its documented coverage and completion
+  semantics, and the status or verification evidence required by the vendor or
+  approved sanitization standard. A command name or exit status alone is not
+  proof.
+- **Verified sanitization** is the evidence-backed outcome of an approved
+  technique, not a synonym for any command above. Claim it only when the
+  operation proves exact whole-device coverage or the supported native
+  mechanism's documented semantics, completes without disqualifying errors, and
+  satisfies the chosen verification policy. State narrower coverage explicitly
+  when the method addresses only the host-visible range.
+
+For sustained destructive writes, review kernel and device transport events
+over the same interval as the writer; do not rely only on its final exit status.
+A reset, timeout, disconnect, or write error leaves sanitization unproven even
+when a utility retries or eventually exits zero. Stop repeated high-rate
+attempts through that unstable path, preserve the verified backup and incident
+evidence, and use a separately validated cable, port, or transport, or a
+supported device-native erase mechanism. Report the narrower achieved outcome,
+such as deployment-ready formatting, until sanitization is proved.
+
+Use this scenario boundary when recording results:
+
+| Evidence | Permitted outcome |
+| --- | --- |
+| Quick format followed by a clean filesystem check and ordinary write/read probe | Deployment-ready; sanitization unproven |
+| Complete zero overwrite with exact whole-device counts, flush, required verification, and no userspace or kernel/device errors | Sanitization verified for the documented overwrite scope and policy |
+| Supported native or cryptographic erase with applicable documented semantics and successful completion evidence | Sanitization verified for the documented mechanism and policy |
+| Mid-write transport reset, even if the writer retries and exits zero | Sanitization unproven |
+| Userspace write error after a partial overwrite | Sanitization unproven |
+| Post-format mount and write validation without whole-device erase evidence | Deployment-ready; sanitization unproven |
+
+Align organizational sanitization claims with an approved standard such as
+[NIST SP 800-88 Rev. 2](https://csrc.nist.gov/pubs/sp/800/88/r2/final) and the
+media-specific mechanisms it recognizes.
+
 ## Human Operator Access
 
 For headless machines:
