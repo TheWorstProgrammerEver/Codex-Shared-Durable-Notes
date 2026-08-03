@@ -40,8 +40,9 @@ files manually.
 Recommended flow:
 
 1. Install the Durable Notes skill and initialize local durable notes.
-2. Review this repository's `INDEX.md`, `AGENTS.shared.md`, and the files under `runbooks/`,
-   `decisions/`, `preferences/`, `credentials/`, `state/`, and `projects/`.
+2. Review this repository's `INDEX.md`, `AGENTS.shared.md`, and the files under
+   `runbooks/`, `decisions/`, `preferences/`, `credentials/`, `state/`, and
+   `projects/`.
 3. Copy useful files into the matching local durable-notes directories.
 4. Merge carefully when a local file already exists, especially
    `INDEX.md`, `state/HOST.md`, `state/CURRENT.md`, `tasks/TODO.md`, and
@@ -85,6 +86,7 @@ This repo should contain reusable agent knowledge:
 - local agent host responsibility principles;
 - GitHub App pull request workflow;
 - Linear local-worker operating model;
+- per-agent Linear app-user identity, credential, attribution, and rollback;
 - headless SSH and OAuth operator patterns;
 - credential metadata rules;
 - secretless third-party integrations using typed, per-invocation action

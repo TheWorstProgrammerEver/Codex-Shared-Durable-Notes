@@ -54,8 +54,9 @@ confirm the operational wiring as well as the issue content:
   build, not a review branch or experimental checkout.
 - Completion and review status names in repository guidance match the worker's
   configured completion, review, and blocked statuses.
-- Unattended API keys are dedicated, revocable, stored outside git, and not
-  temporary validation keys.
+- Unattended workers that need distinct attribution use a dedicated Linear app
+  user with narrow scopes and team grants. Its credentials are revocable,
+  stored outside git, and not temporary validation credentials.
 - The first claimed issue can perform required local or LAN validation before
   downstream issues are bulk-enabled.
 
@@ -108,8 +109,9 @@ environment. Before requeueing work after an authentication incident:
    exactly OK.” Do not claim or requeue issues until this succeeds.
 5. Classify every stranded claim from its own log and state evidence. Requeue
    only when the log proves the Codex session failed during authentication
-   before any tool activity or repository/external mutation. Add a signed
-   Linear comment that records the reason and recovery action.
+   before any tool activity or repository/external mutation. Add an
+   identity-attributed Linear comment that records the reason and recovery
+   action.
 6. If the log is missing, ambiguous, or shows any agent/tool activity, do not
    requeue automatically. Leave the issue in its current active state while a
    live process exists; otherwise move it to `Blocked` for operator review.
@@ -151,14 +153,22 @@ the exact command spelling.
 
 ## Credentials
 
-- Use a dedicated Linear API key for unattended pollers.
-- Store it only in ignored local configuration or a protected service
-  environment file.
-- Do not store it in git, durable notes, comments, logs, or issue descriptions.
-- Use Linear MCP OAuth for interactive sessions, and complete OAuth as a
-  post-boot operator step on fresh hosts.
+- Follow `runbooks/linear-agent-identity.md` when a worker needs its own visible
+  identity. Prefer one private OAuth app and app user per durable agent over a
+  personal API key or user-authorized OAuth session.
+- Use client-credentials app tokens for unattended pollers. Mint or renew the
+  30-day token on startup and after a `401`; store the client secret only in a
+  protected local secret store or service credential facility.
+- Use the same app OAuth bearer-token identity for GraphQL and MCP when the MCP
+  client supports direct bearer-token authentication. Otherwise treat
+  interactive user OAuth as a separately attributed fallback.
+- Store no client secret, access token, refresh token, or personal API key in
+  git, durable notes, comments, logs, issue descriptions, or reusable images.
+- A personal API key is a time-bounded fallback for a workflow intentionally
+  acting as its human owner; it is not a distinct agent identity.
 
 ## Related Work
 
 - [RYA-173 - Document and harden Linear worker recovery for Codex exec auth failures](https://linear.app/ryan-hayward/issue/RYA-173/document-and-harden-linear-worker-recovery-for-codex-exec-auth)
 - [RYA-213 - Harden Linear delegator recovery for immediate Codex exec auth failures](https://linear.app/ryan-hayward/issue/RYA-213/harden-linear-delegator-recovery-for-immediate-codex-exec-auth)
+- [Linear Agent Identity](linear-agent-identity.md)

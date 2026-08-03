@@ -26,6 +26,20 @@ Recommended v0 shape:
 This avoids per-agent consumer-account setup, keeps billing and recovery with
 the operator, and gives the local bridge a provider-neutral interface.
 
+## Service Identity Is Separate
+
+An email mailbox is not a prerequisite for every external service identity.
+When a platform supports native non-human app users or service accounts, prefer
+that identity for API attribution and revocation. For Linear specifically,
+follow [Linear Agent Identity](linear-agent-identity.md): a private OAuth app
+user gives a durable agent distinct authorship without an email-backed member
+account.
+
+Keep a mailbox-backed member or guest as a fallback only when the workflow
+requires an actual interactive login or a capability unavailable to the app
+user. Do not create email-backed accounts solely to produce different API
+comment names.
+
 ## Decision Rubric
 
 Choose a managed custom-domain mailbox provider when:

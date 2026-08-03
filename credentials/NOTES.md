@@ -51,19 +51,35 @@ GitHub App:
 - Mint short-lived installation tokens on demand.
 - Revoke by suspending or uninstalling the app, or by rotating the private key.
 
-Linear MCP OAuth:
+Linear app-user OAuth:
 
-- Use OAuth for interactive Codex sessions.
-- Store token material only in Codex-managed private state.
-- Revoke in Linear account or workspace settings, then re-run MCP login.
+- When a durable agent or unattended worker needs distinct visible authorship,
+  prefer one private OAuth app and app user per agent identity. Follow
+  [Linear Agent Identity](../runbooks/linear-agent-identity.md).
+- Authorize the app with `actor=app`. Use a direct app bearer token for Linear
+  MCP and GraphQL, and use the client-credentials grant for unattended workers.
+- Limit scopes and team grants, keep client secrets and access tokens in
+  protected credential state, and verify `viewer` before enabling writes.
+- Revoke the token or app installation, or rotate the client secret, then
+  repeat the identity and authorization checks before restarting the worker.
 
-Linear API key:
+User-authenticated Linear MCP fallback:
 
-- Use a dedicated key for unattended local pollers.
-- Store it in ignored local configuration or a protected service environment
-  file.
-- Revoke in Linear account API settings and restart the owning service after
-  replacement.
+- Use user OAuth only when the workflow intentionally acts as the signed-in
+  human or the MCP client cannot accept an app bearer token.
+- Record that mutations are attributed to that human; this credential does not
+  create a distinct agent actor.
+- Store token material only in Codex-managed private state. Revoke it in Linear
+  account or workspace settings, then re-run MCP login when required.
+
+Personal Linear API key fallback:
+
+- Use a dedicated personal API key only as an explicit, time-bounded fallback
+  for a workflow intentionally acting as the key's human owner.
+- Do not treat a separate API key as a separate agent identity. Store it in
+  ignored local configuration or a protected service environment file.
+- Revoke it in Linear account API settings and restart the owning service only
+  after replacement and attribution checks pass.
 
 Mailbox or notification bot:
 
