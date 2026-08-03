@@ -19,6 +19,8 @@ Durable Notes skill hierarchy.
 - `runbooks/github-app-pr-workflow.md` - GitHub App branch, PR, and review flow.
 - `runbooks/linear-local-worker.md` - Linear as backlog with local execution.
 - `runbooks/headless-operator-flows.md` - SSH, tmux, and OAuth handoff patterns.
+- `runbooks/temporary-removable-media-smb.md` - bounded, authenticated,
+  encrypted, read-only SMB browsing of removable media.
 - `runbooks/testing-cleanup-practices.md` - test isolation and cleanup checks.
 - `runbooks/agent-email-identity.md` - dedicated agent mailbox safety model.
 - `runbooks/secretless-agent-integrations.md` - threat model and deterministic

@@ -93,3 +93,12 @@ permissions and a cleanup routine:
 
 Do not let the inbox become the durable knowledge base. Promote only reusable
 facts into durable notes.
+
+## Temporary Removable-Media Browsing
+
+When an operator needs Finder or another SMB client to browse attached media,
+use the
+[temporary removable-media SMB runbook](temporary-removable-media-smb.md).
+Keep the partition and SMB export independently read-only, require temporary
+authentication and encryption, and tear down the listener before unmounting
+the media.

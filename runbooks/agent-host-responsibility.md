@@ -55,6 +55,11 @@ state, durable notes, or other agent memory. Mounted-file copies can be useful
 as a readable convenience artifact, but they may miss filesystems the current
 host cannot mount.
 
+When preserved or non-agent media needs short-lived human browsing, use the
+[temporary removable-media SMB runbook](temporary-removable-media-smb.md) for
+an authenticated, encrypted, read-only transaction. Temporary network access
+does not replace the preservation decision above.
+
 Prefer physical drive labels that include the agent name, and mirror that name
 in backup paths, manifests, and restore notes. Use the NAS or storage-owner
 model in `runbooks/offline-reservoir-shared-storage.md` for regular backup

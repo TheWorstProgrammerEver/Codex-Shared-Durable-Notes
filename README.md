@@ -96,6 +96,8 @@ This repo should contain reusable agent knowledge:
 - bootstrap failure and recovery lessons;
 - established-agent identity migration with portable/rebuild/credential state
   boundaries, parallel cutover, endpoint readiness, and rollback gates;
+- temporary authenticated and encrypted read-only SMB browsing of removable
+  media with isolated runtime state and identity-aware teardown;
 - Kiwix-first offline knowledge reservoir setup for local agents and humans;
 - separate community-library appliance boundaries for AP/DHCP/DNS, captive
   portal, dashboard, content sync, and field operations;
