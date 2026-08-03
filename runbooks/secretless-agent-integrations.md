@@ -9,6 +9,21 @@ The reusable boundary is a deterministic action broker that keeps upstream
 credentials outside that runtime and authorizes each concrete effect before a
 narrow connector executes it.
 
+Call this reference monitor `Aegis` when a concrete name is useful. Aegis is
+not an agent: it is persistent deterministic infrastructure for authentication,
+policy enforcement, approvals, durable effect state, credential-holding
+connectors, revocation, reconciliation, and audit. No LLM or other open-ended
+cognition belongs in the trusted allow path. A model or classifier may advise
+the monitor to warn, deny, or escalate, but probabilistic output must never
+create or widen authority.
+
+The intended guarantee is narrow: even if the model and tool runtime are
+hostile, they can perform only the concrete effects allowed by current system
+policy, their workload ceiling, a bounded task grant, any required exact
+approval, connector constraints, and provider-side limits. This does not prove
+that an allowed request is wise, truthful, faithful to the user's intent, or
+safe in the physical world.
+
 ## Security Invariants
 
 1. **Secret non-disclosure and effect authorization are different controls.**
@@ -27,6 +42,9 @@ narrow connector executes it.
 6. **Assume every boundary can fail.** Provider-side limits, revocation, and
    independently retained audit evidence contain broker or connector
    compromise.
+7. **Cognition may reduce authority, never create it.** An advisory model may
+   recommend denial or escalation, but deterministic policy alone decides
+   whether an effect is allowed.
 
 ## Architecture
 
@@ -39,7 +57,7 @@ narrow connector executes it.
                         | typed operation + task/session grant
                         v
        +--------------------------------------------+
-       | ACTION BROKER                              |
+       | AEGIS ACTION BROKER / REFERENCE MONITOR    |
        |                                            |
        | PEP: authenticate, canonicalize, enforce   |
        | PDP: policy, grant, quota, approval rules  |
@@ -83,6 +101,26 @@ This architecture does not make model output trustworthy or prove the upstream
 performed the intended real-world result. It narrows authority and creates
 evidence.
 
+## Authority Layers
+
+Keep these concerns distinct so that possession of one artifact is not mistaken
+for the complete authority decision:
+
+| Layer | What it establishes | What it does not establish |
+| --- | --- | --- |
+| Workload identity | Which authenticated runtime is asking | Permission to perform an operation |
+| Delegable capability or task grant | The maximum operations, resources, and parameters that may be requested | Current policy, quota, approval, or provider outcome |
+| Broker policy | Whether this canonical invocation is allowed now under system and workload rules | Human consent when exact approval is required |
+| Exact human approval | Permission to attempt one immutable high-impact request | A reusable mandate or proof that the effect occurred |
+| Quota, replay, and revocation ledger | Remaining uses, concurrency, consumed nonces, and current revocation state | Correct upstream request construction or outcome |
+| Connector execution | The closed mapping from authorized domain operation to one provider effect | Exactly-once execution across an ambiguous provider boundary |
+| Reconciliation | The authoritative classification of submitted or uncertain effects | Retrospective permission for an unauthorized request |
+
+Effective authority is the intersection of system policy, the authenticated
+workload ceiling, the task or session grant, and exact approval when required.
+Mutable issue text, prompts, tool descriptions, and model assertions are inputs,
+not authority.
+
 ## Why Vaults And Generic Proxies Are Insufficient
 
 A vault that returns a token to the agent changes where the credential rested,
@@ -123,6 +161,16 @@ hostnames, case rules, and ordered collections once. Reject duplicate or
 ambiguous encodings. Hash binary or large content after constraining type and
 size; the approval view must identify what that digest represents.
 
+A tool identifier plus syntactically valid argument constraints is secure only
+when the connector owns a closed semantic contract that resolves them to the
+intended real resource and downstream effect. Version or content-bind that
+contract. Reject generic tools, caller-selected destinations, mutable aliases,
+or identifiers whose resolution can escape the reviewed resource boundary.
+Authorization of `repository.comment.create(repo_id, issue_id, body_digest)`,
+for example, is meaningful only if the connector derives the provider origin,
+resolves both identifiers in the intended tenant, constructs the sole permitted
+request, and projects the response without exposing a reusable credential.
+
 A task or session grant is authority to ask the broker, not authority to bypass
 policy. Bind it to the authenticated workload and principal, permitted
 operations, resources, recipients, parameter ceilings, expiry, quotas, and
@@ -143,6 +191,51 @@ For every invocation, the broker must:
 An authorization or dependency timeout is a denial. An upstream timeout is an
 unknown outcome to reconcile under the same idempotency key, not permission to
 submit a second effect.
+
+## Offline Attenuation And Emerging AAT Work
+
+[Attenuating Authorization Tokens for Agentic Delegation Chains,
+`draft-niyikiza-oauth-attenuating-agent-tokens-01`](https://www.ietf.org/archive/id/draft-niyikiza-oauth-attenuating-agent-tokens-01.html)
+was published on 15 June 2026. It is an individual Internet-Draft and therefore
+**work in progress** that may be updated, replaced, or obsoleted. Track later
+revisions, but do not make this draft a v1 dependency.
+
+AATs profile RFC 9396 authorization details into holder-bound tool and argument
+capabilities. A delegating holder can sign an equal or narrower child token,
+subject to depth and lifetime ceilings. An enforcement point with the root
+trust anchor can authenticate the complete chain, verify proof of possession,
+bind a proof to the leaf token, tool, and canonical arguments, and reject any
+delegation that widens authority without contacting the root issuer.
+
+That solves an important delegation problem; it does not constitute a complete
+action broker. The base protocol does not define:
+
+- individual derived-token revocation or its transport, storage, distribution,
+  consistency, status, or introspection mechanisms;
+- approval gates, exact request binding, trusted approval presentation, or
+  atomic one-use approval consumption;
+- invocation count, ordering, rate, concurrency, or aggregate quotas for calls
+  that remain within the token's scope;
+- the replay-state backend or consistency model required for side-effecting
+  operations, application idempotency, effect reservations, or crash recovery;
+- transport binding for delivering the chain, although invocation proof is
+  holder-bound and transport-level mechanisms may be layered separately;
+- provider request construction, the semantic mapping from constrained tool
+  arguments to real resources, outcome reconciliation, or independent audit.
+
+Use this selection rule:
+
+| Need | Default mechanism |
+| --- | --- |
+| Immediate revocation, exact quotas, approvals, concurrency control, replay prevention, or crash recovery | Online broker-mediated opaque grant and durable ledger |
+| Delegation hops must narrow authority without issuer connectivity, and expiry-bounded repeated within-scope use is acceptable | Offline attenuating capability, after its verifier and tool contract are threat-modelled |
+| Offline derivation is useful but effects are high-value or side-effecting | Hybrid: verify attenuation at the enforcement point, then apply the same online policy, approval, revocation, reservation, idempotency, and reconciliation controls |
+
+For v1, prefer short opaque grant identifiers whose authoritative record stays
+online in Aegis. They are simpler to revoke and update, reveal less policy
+metadata, and keep quota, approval, replay, and recovery decisions in one
+transactional boundary. Offline attenuation is an optimization and federation
+tool, not a reason to weaken those controls.
 
 ## Human Approval And Hardware Signers
 
@@ -171,6 +264,22 @@ operation; it is not proof of successful execution.
 If policy needs a reusable mandate, provision it separately as a scoped grant
 with explicit resource, parameter, expiry, and quota bounds. Do not turn an
 exact-action human approval into a reusable mandate.
+
+Avoid becoming an approval-click generator. Humans approve bounded authority
+envelopes and exceptional effects; unattended routine work stays inside narrow,
+expiring grants:
+
+| Effect class | Examples | Default |
+| --- | --- | --- |
+| Read-only | Repository inspection, issue queries, backup verification | Automatic within grant |
+| Reversible internal | Create backlog items, stage artifacts, prepare jobs | Automatic and audited |
+| Bounded external | Draft pull requests, reviews, templated notifications | Automatic under a narrow expiring mandate |
+| Irreversible or high-impact | Merge, delete, publish, spend, canonical promotion, start or resume machinery | Exact trusted approval |
+| Unmodelled or general-purpose | Arbitrary HTTP, shell, raw GraphQL, raw machine instructions, unrestricted paths | Prohibited |
+
+Run an initial deployment in shadow mode and record `would allow`,
+`would escalate`, and `would deny`. Promote repeated safe patterns only through
+reviewed grant templates; Aegis must not learn or silently relax policy.
 
 Hardware can make a signing key non-exportable, but only the verifier's durable
 state can make a signed artifact single-use. An unattended signer on a
@@ -221,6 +330,8 @@ token, metadata, secret-store, and approval backends.
 
 For each connector:
 
+- use a separate process and security principal per provider, with no
+  cross-provider credential lookup;
 - allowlist scheme, host, port, method, path template, content type, request
   fields, and response size;
 - derive destinations from configuration and validated identifiers, never a
@@ -249,6 +360,31 @@ broker policy above.
 
 ## Audit, Revocation, And Recovery
 
+Persist an explicit effect state machine rather than inferring execution from a
+request log:
+
+```text
+RECEIVED
+  -> DENIED | CANCELLED | WAITING_APPROVAL
+  -> AUTHORIZED
+  -> SUBMISSION_RESERVED
+  -> DISPATCHING
+  -> SUCCEEDED | FAILED_BEFORE_EFFECT | OUTCOME_UNKNOWN
+  -> RECONCILING
+  -> SUCCEEDED | CONFIRMED_NO_EFFECT | MANUAL_INTERVENTION
+```
+
+The `AUTHORIZED -> SUBMISSION_RESERVED` transition atomically rechecks policy,
+grant, revocation, clock, and preconditions; consumes any one-use approval;
+reserves quota; creates a numbered attempt; and records the audit outbox before
+connector execution. Ambiguous attempts retain their reservation and consume
+quota.
+
+Exactly-once execution cannot be inferred across an external API boundary.
+Prefer provider-native idempotency, then authoritative reconciliation using
+immutable provider identifiers or deterministic markers. Never blindly retry a
+non-idempotent unknown outcome; reconcile it or stop for human inspection.
+
 Write decision, denial, approval, reservation, connector attempt, upstream
 outcome, redaction, reconciliation, and revocation events to an append-only
 sink. The broker may append but should not edit or delete prior events. Export
@@ -273,6 +409,32 @@ Test the kill switch and recovery process. Revocation propagation time is part
 of the risk budget.
 
 ## Deployment Patterns
+
+### Credible production boundary
+
+A production reference monitor must occupy a security domain separate from
+every root-equivalent agent runtime. Profiles, containers, or processes on a
+host controlled by the same root principal are not independent identities or
+strong secret isolation. Enforce network paths outside agent-controlled hosts,
+keep administration and approval planes unreachable by agent identities, and
+copy audit evidence to a separately administered append-only sink.
+
+Agents must have no provider credential, reusable signed request, token-returning
+helper, or fallback route around Aegis. A development same-host prototype may
+exercise contracts and state machines, but it must not claim the production
+isolation guarantee.
+
+Prefer one fail-closed appliance before multi-node coordination. It needs
+durability and isolation, not inference performance: a low-power four-core
+system, 8--16 GB RAM, NVMe storage, wired networking, TPM 2.0 and Secure Boot
+where available, and a small UPS are ample. A smaller single-board prototype is
+reasonable with proper cooling and USB/NVMe storage, but do not put the durable
+effect ledger on microSD. No GPU, NPU, local model, large RAM pool, browser,
+ordinary user workload, or Codex process belongs on the appliance. Keep policy,
+grant, approval, ledger, credential, and audit-outbox state local; external
+artifact storage is authoritative only by immutable content digest. Prefer a
+minimal operating system and inspectable service manager rather than a
+general-purpose application host.
 
 ### Local agent
 
@@ -302,6 +464,50 @@ audience. Prefer outbound customer-side connector traffic so the broker does
 not expose a generic inbound proxy. A hosted platform's tool catalog remains
 discovery metadata, not authorization.
 
+## Fleet Permission Direction
+
+Use role-specific ceilings rather than a blanket super-agent bypass. In the
+current fleet, this direction maps to:
+
+- **Hygieia:** may inspect automatically, create bounded backlog items,
+  stage artifacts, and propose narrow drafts, but not merge or install;
+- **Momus:** may read, review, and comment under its own workload
+  identity, but not exercise builder-equivalent approval or merge authority;
+- **Mnemosyne:** may inventory, stage, checksum, validate provenance, and
+  verify backups, while canonical promotion is separately bounded and deletion
+  starts disabled;
+- **Hephaestus:** may build and quarantine immutable artifacts, while
+  deployment and device effects require separate grants and approval;
+- **Pygmalion:** may quarantine inputs, run trusted slicing and validation,
+  preview, and observe, but raw machine instructions and firmware changes stay
+  prohibited; starting or resuming an exact job initially requires an attended
+  physical check and approval;
+- **Daedalus:** may propose broadly and create draft pull
+  requests, but receives no bypass around the reference monitor.
+
+## Deliberately Narrow MVP
+
+Start with one low-risk end-to-end effect against one sandbox resource:
+
+1. Separate security domain with short-lived mutually authenticated enrollment.
+2. One closed, versioned operation registry backed by opaque grants,
+   deterministic policy, quotas, and revocation.
+3. Durable operation and attempt ledger tested for concurrency, replay,
+   restart, and ambiguous outcomes.
+4. Trusted approval UI with WebAuthn, exact digest binding, and an independent
+   kill switch, even if the first low-risk operation does not require approval.
+5. One GitHub App connector with minimum repository and operation permissions,
+   just-in-time credential hydration, and independently copied audit evidence.
+6. First operation: create one bounded issue comment. A later slice may ingest
+   a content-addressed change bundle, validate it completely, publish to a
+   broker-derived branch, and create a draft pull request.
+7. Production cutover only after removing every direct provider credential,
+   helper, and fallback path from agent-controlled security domains.
+
+Keep merge, delete, messaging, storage mutation, deployment, payment, machine
+start, dynamic policy authoring, offline delegation, and multi-node high
+availability outside the first proof.
+
 ## Migration Examples
 
 | Existing integration | Secretless migration | Required authorization |
@@ -320,6 +526,10 @@ short-lived token. Replace credential access with effect-only operations.
 - A compromised connector or secret store can misuse its provider credential.
 - A deceptive request or compromised approval display can induce valid
   approval of an unwanted action.
+- Approval fatigue can train a human to authorize a precisely displayed but
+  unwanted effect.
+- An authorized read or export can still exfiltrate data within its permitted
+  result schema and quota.
 - Coarse upstream APIs may prevent exact least privilege or authoritative
   reconciliation.
 - Provider compromise, ambiguous resource identity, redirects, or mutable
@@ -343,16 +553,21 @@ upstream limits where the broker alone cannot contain it.
 | Indirect injection in a page, email, document, or API response changes arguments | External content remains data; canonical operation is re-authorized and any material change invalidates prior approval |
 | Arbitrary shell runs in the agent environment | No upstream credential or token helper output is available; default-deny egress prevents direct provider access |
 | Agent invokes a credential or signing helper | No token-returning helper exists in the agent boundary; signer requires an exact broker challenge and returns no reusable upstream credential |
+| Agent searches files, processes, environment, helper output, or network paths for an upstream token | No provider credential or reusable signed request exists in its security domain; direct provider and token-service egress is denied |
 | Agent abuses a generic proxy | No raw HTTP operation exists; unknown operation, destination, method, header, body, and redirect fields are rejected |
 | SSRF, redirect, alternate IP, or DNS rebinding targets an internal service | Connector derives an allowed destination, validates every connection/hop, and blocks non-approved address classes |
 | Approval is replayed, races, or request data changes after preview | Digest, nonce, expiry, policy version, and atomic consumed state reject replay or mutation before a second connector call |
 | Caller reuses another task, session, user, or tenant handle | Broker derives caller identity from authentication and rejects the mismatched grant or state handle |
+| Holder key is compromised | Attacker remains inside the current capability ceiling; online revocation or short expiry bounds exposure, and repeated within-scope effects remain subject to broker quotas and state |
 | Concurrent calls try to exceed quota | Atomic reservation admits only operations within per-call, rolling, and concurrent limits |
 | Broker fails before connector submission | Operation fails closed; reservation and audit state permit safe recovery |
 | Connector times out after submission | Outcome remains `unknown`; reconciliation uses the same idempotency key and never blindly repeats the effect |
 | Broker or connector is compromised | Provider-side scope and quotas bound effects; independent audit remains available; kill switch revokes credentials and grants |
+| Agent tries a retained direct helper or provider route around Aegis | No helper or usable fallback route remains at production cutover; the bypass test fails before upstream authentication |
+| Compromised broker tries to erase its history | Separately administered append-only evidence remains available and cannot be deleted by the broker identity |
 | Upstream response contains a credential or prompt injection | Response schema and redaction remove disallowed fields; returned text remains labeled untrusted |
 | Operator revokes access | New invocations fail, pending approvals cannot execute, credentials are disabled, and submitted/unknown outcomes remain reconcilable |
+| Tool arguments resolve to the wrong tenant, mutable alias, redirect, or provider resource | Closed connector contract rejects the mismatch before effect; syntactic constraint validity alone does not authorize it |
 
 Record the policy version, fixture, expected and actual decision, connector-call
 count, upstream evidence, audit event IDs, and redaction result. Run the matrix
@@ -381,6 +596,8 @@ changes.
 - [RFC 9700: Best Current Practice for OAuth 2.0 Security](https://www.rfc-editor.org/rfc/rfc9700.html)
 - [RFC 9396: OAuth 2.0 Rich Authorization Requests](https://www.rfc-editor.org/rfc/rfc9396.html)
 - [RFC 9449: OAuth 2.0 Demonstrating Proof of Possession](https://www.rfc-editor.org/rfc/rfc9449.html)
+- [RFC 8693: OAuth 2.0 Token Exchange](https://www.rfc-editor.org/rfc/rfc8693.html)
+- [Attenuating Authorization Tokens for Agentic Delegation Chains, draft-01 (work in progress)](https://www.ietf.org/archive/id/draft-niyikiza-oauth-attenuating-agent-tokens-01.html)
 - [RFC 9421: HTTP Message Signatures](https://www.rfc-editor.org/rfc/rfc9421.html)
 - [OWASP AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html)
 - [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)
