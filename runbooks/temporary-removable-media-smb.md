@@ -17,8 +17,8 @@ from this transaction into shared notes or an issue.
 
 - Confirm the media is not agent identity-bearing state that first needs the
   [agent media preservation flow](agent-host-responsibility.md#agent-media-preservation).
-- Use a stable partition alias under `/dev/disk/by-id/`, not enumeration order
-  or a transient name such as `/dev/sdb1`.
+- Use stable whole-device and partition aliases under `/dev/disk/by-id/`, not
+  enumeration order or transient names such as `/dev/sdb` and `/dev/sdb1`.
 - Record the operator-approved device attributes privately: whole-device and
   partition identity, size, filesystem, and expected hardware identity.
 - Choose an existing local account that can read the mounted tree but has no
@@ -41,6 +41,9 @@ Samba services. On a systemd-based Debian-family host, mask the relevant units
 before installation, then leave them persistently masked afterward:
 
 ```bash
+set -Eeuo pipefail
+set +x
+sudo -v
 sudo systemctl mask --runtime \
   smbd.service nmbd.service samba-ad-dc.service winbind.service
 sudo apt-get install --no-install-recommends samba smbclient
@@ -58,37 +61,67 @@ masked; enabling any of them later requires a separate operator decision.
 Open a dedicated root shell for the rest of the transaction and keep every
 variable in that one shell. The snippets retain explicit `sudo` at privileged
 boundaries, but their private-file redirections assume the controlling shell is
-also root.
+also root. Enter the root shell first:
 
 ```bash
 sudo -i
-test "$(id -u)" = 0
-set +x
 ```
+
+Then establish fail-closed Bash behavior inside that new shell before entering
+any later block:
+
+```bash
+set -Eeuo pipefail
+set +x
+test "$(id -u)" = 0
+```
+
+Keep this strict shell state for the entire transaction. A failed identity,
+mount, configuration, permission, readiness, denial, or cleanup check must
+stop the flow before the next effect. Only the expected negative probes below
+handle failure explicitly or disable `errexit` for one bounded command.
 
 ## Reidentify And Mount The Partition Read-Only
 
-This example alias is synthetic:
+These example aliases are synthetic:
 
 ```bash
+DEVICE_ALIAS=/dev/disk/by-id/usb-EXAMPLE_REMOVABLE_MEDIA
 MEDIA_ALIAS=/dev/disk/by-id/usb-EXAMPLE_REMOVABLE_MEDIA-part1
 MOUNT_POINT=/mnt/example-media-ro
 
+DEVICE="$(readlink -e -- "$DEVICE_ALIAS")"
 PARTITION="$(readlink -e -- "$MEDIA_ALIAS")"
+test -b "$DEVICE"
 test -b "$PARTITION"
+test "$(lsblk -dnro TYPE -- "$DEVICE")" = disk
 test "$(lsblk -dnro TYPE -- "$PARTITION")" = part
-LSBLK_COLUMNS=NAME,KNAME,PKNAME,TYPE,MAJ:MIN,SIZE,RM,RO
-LSBLK_COLUMNS=$LSBLK_COLUMNS,FSTYPE,MOUNTPOINTS,MODEL,SERIAL
-lsblk --json --tree --bytes --paths \
-  --output "$LSBLK_COLUMNS" \
-  "$PARTITION"
+PARTITION_PARENT_KNAME="$(lsblk -dnro PKNAME -- "$PARTITION")"
+test -n "$PARTITION_PARENT_KNAME"
+PARTITION_PARENT="$(readlink -e -- "/dev/$PARTITION_PARENT_KNAME")"
+test "$PARTITION_PARENT" = "$DEVICE"
+
+IDENTITY_COLUMNS=NAME,KNAME,PKNAME,TYPE,MAJ:MIN,SIZE,RM
+IDENTITY_COLUMNS=$IDENTITY_COLUMNS,FSTYPE,MODEL,SERIAL
+DEVICE_IDENTITY_JSON="$(lsblk --json --tree --bytes --paths \
+  --output "$IDENTITY_COLUMNS" \
+  "$DEVICE")"
+test -n "$DEVICE_IDENTITY_JSON"
+printf '%s\n' "$DEVICE_IDENTITY_JSON"
+
+DEVICE_MAJ_MIN="$(lsblk -dnro MAJ:MIN -- "$DEVICE")"
 PARTITION_MAJ_MIN="$(lsblk -dnro MAJ:MIN -- "$PARTITION")"
 ```
 
-Privately compare the structured output with every approved device and
-partition attribute. A removable flag alone is not identity evidence. Do not
-paste the output into shared logs because model and serial fields can identify
-the device.
+Querying the whole device makes its record and its partition children available
+in one private topology snapshot; querying only the partition can omit the
+parent record and return empty hardware fields. Privately compare the structured
+output with every approved whole-device and partition attribute, including the
+expected parent-child relation and the approved hardware identity. A removable
+flag, kernel path, or device number alone is not identity evidence. Stop if the
+approved hardware identity is unavailable or the selected partition is not a
+child of the approved whole device. Do not paste the output into shared logs
+because model and serial fields can identify the device.
 
 Require an empty, unmounted target, mount with read-only and defensive options,
 then inspect the effective mount rather than trusting the command request:
@@ -332,9 +365,10 @@ denied a write.
    `KillMode=control-group` keeps child processes in the same cleanup boundary.
 3. Wait until the unit is no longer active. Prove no process is listening on
    TCP port 445 before touching the mount.
-4. Re-resolve the stable partition alias and compare its device number with the
-   captured identity and the mounted source. If any identity changed, stop for
-   operator reconciliation rather than unmounting a replacement device.
+4. Re-resolve both stable aliases, rebuild the whole-device topology snapshot,
+   and compare it with the captured whole-device and partition identities plus
+   the mounted source. If any identity changed, stop for operator reconciliation
+   rather than unmounting a replacement device.
 5. Unmount the exact mount and prove it is absent.
 6. Remove only the exact operation-owned firewall rule, runtime directory, and
    credentials. Leave distribution Samba units masked.
@@ -353,9 +387,21 @@ MAIN_PID="$(sudo systemctl show --property=MainPID --value \
 test "$MAIN_PID" = 0
 ! sudo ss -H -ltn 'sport = :445' | grep -q .
 
+CLEANUP_DEVICE="$(readlink -e -- "$DEVICE_ALIAS")"
 CLEANUP_PARTITION="$(readlink -e -- "$MEDIA_ALIAS")"
+CLEANUP_PARENT_KNAME="$(lsblk -dnro PKNAME -- "$CLEANUP_PARTITION")"
+test -n "$CLEANUP_PARENT_KNAME"
+CLEANUP_PARTITION_PARENT="$(readlink -e -- "/dev/$CLEANUP_PARENT_KNAME")"
+CLEANUP_DEVICE_IDENTITY_JSON="$(lsblk --json --tree --bytes --paths \
+  --output "$IDENTITY_COLUMNS" \
+  "$CLEANUP_DEVICE")"
+CLEANUP_DEVICE_MAJ_MIN="$(lsblk -dnro MAJ:MIN -- "$CLEANUP_DEVICE")"
 CLEANUP_MAJ_MIN="$(lsblk -dnro MAJ:MIN -- "$CLEANUP_PARTITION")"
+test "$CLEANUP_DEVICE" = "$DEVICE"
 test "$CLEANUP_PARTITION" = "$PARTITION"
+test "$CLEANUP_PARTITION_PARENT" = "$CLEANUP_DEVICE"
+test "$CLEANUP_DEVICE_IDENTITY_JSON" = "$DEVICE_IDENTITY_JSON"
+test "$CLEANUP_DEVICE_MAJ_MIN" = "$DEVICE_MAJ_MIN"
 test "$CLEANUP_MAJ_MIN" = "$PARTITION_MAJ_MIN"
 test "$(findmnt -nro MAJ:MIN --target "$MOUNT_POINT")" = "$PARTITION_MAJ_MIN"
 sudo umount -- "$MOUNT_POINT"
