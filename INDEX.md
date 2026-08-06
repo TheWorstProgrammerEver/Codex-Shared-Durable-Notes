@@ -13,6 +13,8 @@ Durable Notes skill hierarchy.
 - `runbooks/durable-notes-memory-model.md` - wiki-plus-ledger memory model.
 - `runbooks/agent-host-responsibility.md` - practical local-agent host posture.
 - `credentials/NOTES.md` - credential metadata rules and examples.
+- `projects/olympus-nas.md` - concrete Olympus NAS appliance, Offline Reservoir
+  integration, authority boundary, and live-verification points.
 
 ## Runbooks
 

@@ -10,6 +10,12 @@ Kiwix is the first serving layer. The durable system is broader: curated
 corpora, provenance, refresh policy, catalogs, retrieval surfaces, backups,
 snapshots, and owner-approved promotion into canonical storage.
 
+The fleet's deployed storage substrate is
+[Olympus](../projects/olympus-nas.md). That baseline identifies the concrete
+appliance, current reservoir integration, and facts that require live
+verification; this runbook remains authoritative for storage workflow and
+permissions.
+
 For a separate community-library appliance that copies an approved read-only
 export, owns its client network, and promotes only its local staged release, use
 `runbooks/offline-community-library-appliance.md`.
