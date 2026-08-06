@@ -92,8 +92,8 @@ generated notes, logs, or validation reports.
    read-back, then run read-only filesystem checks after customization.
 3. **Reach and recover the headless host.** Prove a local/offline recovery path,
    provision two independently usable public-key access paths, and establish a
-   persistent operator session. Keep temporary password access until the SSH
-   cutover gate passes.
+   persistent operator session. Keep temporary password-capable access until
+   the SSH cutover gate passes.
 4. **Prove unattended privilege.** Require `sudo -n true` for the dedicated
    account before any automatic step depends on privilege.
 5. **Complete Codex authentication.** Run the supported manual device or OAuth
@@ -113,9 +113,12 @@ generated notes, logs, or validation reports.
    one harmless service canary per task, timer enablement/activity/finite next
    trigger, bounded observability, and empty bootstrap-secret storage.
 10. **Harden SSH transactionally.** Validate the complete candidate, reload
-    rather than stop SSH, inspect the effective policy, prove fresh key-only
-    logins through both intended key paths, and prove a password-only client is
-    offered no password method.
+    rather than stop SSH, and inspect the effective target-user policy,
+    including `Match` overrides. Require both `PasswordAuthentication no` and
+    `KbdInteractiveAuthentication no`, prove fresh key-only logins through both
+    intended key paths, and run separate fresh negative client probes
+    restricted to `password` and `keyboard-interactive`. Both probes must fail
+    before the cutover is complete.
 11. **Reboot and prove durability.** Confirm the bootstrap runner does not
     replay completed cognition or once-only effects, every intended timer
     re-arms with a finite future activation, service canaries still work,
@@ -154,8 +157,12 @@ The following checks must pass before the first dependent automatic step:
   reinstallers deliberately restart or otherwise re-arm an already-active
   timer; `enable --now` alone is not a repeat-install transition.
 - **SSH:** both intended public-key paths work before password authentication is
-  removed. Post-cutover proof uses fresh external key-only sessions and a
-  negative password-only probe, not only an established safety session.
+  removed. Post-cutover proof checks the effective target-user policy,
+  including `Match` overrides; requires both `PasswordAuthentication no` and
+  `KbdInteractiveAuthentication no`; uses fresh external key-only sessions;
+  and runs separate negative client probes restricted to `password` and
+  `keyboard-interactive`. Both probes must fail; an established safety session
+  is not proof.
 
 Use the coding-style skill's detailed
 [packaged-runtime verification](https://github.com/TheWorstProgrammerEver/codex-skills/blob/main/coding-style/references/packaged-runtime-verification.md)
@@ -295,6 +302,8 @@ At minimum, record:
 - every recurring task definition parsed and adapter reviewed;
 - every enabled task's static check, live canary, enabled state, active state,
   finite next trigger, and post-reboot re-arm proof;
-- both SSH key paths and the password-only negative probe;
+- both SSH key paths, the effective target-user denial of password and
+  keyboard-interactive methods, and separate negative probes restricted to
+  each method that both failed;
 - replay/ambiguity and suffix-recovery policies reviewed; and
 - reboot evidence showing no completed once-only effect replayed.
