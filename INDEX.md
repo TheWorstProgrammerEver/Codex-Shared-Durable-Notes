@@ -20,6 +20,9 @@ Durable Notes skill hierarchy.
 - `runbooks/linear-local-worker.md` - Linear as backlog with local execution.
 - `runbooks/linear-agent-identity.md` - per-agent app-user identity,
   attribution, credential lifecycle, validation, and rollback.
+- `runbooks/agent-appliance-provisioning.md` - role-neutral small-agent
+  appliance composition, ordered commissioning, recurring-task evidence,
+  replay-safe recovery, and reboot proof.
 - `runbooks/headless-operator-flows.md` - SSH, tmux, and OAuth handoff patterns.
 - `runbooks/temporary-removable-media-smb.md` - bounded, authenticated,
   encrypted, read-only SMB browsing of removable media.
