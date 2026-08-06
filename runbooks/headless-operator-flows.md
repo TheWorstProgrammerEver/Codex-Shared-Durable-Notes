@@ -41,7 +41,10 @@ image implementation, see the
 
 - Install and enable SSH only when the host is intended for remote operation.
 - Add the operator's public key through a deliberate bootstrap step.
-- Confirm key-based login before disabling password login.
+- Prove every intended key path before a key-only cutover. Use the
+  [appliance runbook's transactional SSH gate](agent-appliance-provisioning.md#field-proven-gates)
+  to check effective target-user policy and separate password and
+  keyboard-interactive negative probes.
 - Disable root SSH login.
 - Restrict SSH users when appropriate.
 - Keep local access instructions in a host-local note, not in a shared repo.

@@ -84,6 +84,8 @@ This repo should contain reusable agent knowledge:
 
 - durable notes memory model and merge habits;
 - local agent host responsibility principles;
+- role-neutral provisioning and acceptance gates for small headless agent
+  appliances;
 - GitHub App pull request workflow;
 - Linear local-worker operating model;
 - per-agent Linear app-user identity, credential, attribution, and rollback;
