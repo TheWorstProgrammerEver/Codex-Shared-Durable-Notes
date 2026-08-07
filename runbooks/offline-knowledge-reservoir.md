@@ -25,6 +25,11 @@ tarballs, recovery helpers, and package closures, use the layout, manifest,
 validation, refresh, and cache-escalation rules in
 `runbooks/offline-developer-support-pack.md`.
 
+For AI model weights, attributable conversions, modality dependencies,
+runtime/platform closure, closed-provider continuity, and no-network restore
+evidence, use `runbooks/ai-model-runtime-preservation.md`. A model cache or
+downloaded weight file is not by itself an offline capability.
+
 ## Kiwix Or Internet-in-a-Box
 
 Choose Kiwix when the target is:

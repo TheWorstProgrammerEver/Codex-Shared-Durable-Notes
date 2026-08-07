@@ -49,6 +49,9 @@ Durable Notes skill hierarchy.
 - `runbooks/offline-developer-support-pack.md` - curated offline developer
   docs, package closures, manifest schema, validation, refresh, pruning, and
   cache/mirror escalation boundaries.
+- `runbooks/ai-model-runtime-preservation.md` - AI sovereignty classes,
+  canonical model and derivative custody, runtime/platform closure, manifest
+  contract, and no-network restore verification.
 - `runbooks/offline-reservoir-shared-storage.md` - NAS-backed Offline Reservoir
   permission, proposal, promotion, and Mnemosyne ownership model.
 - `runbooks/storage-owner-hardware-and-inference.md` - trial-first custody-host
