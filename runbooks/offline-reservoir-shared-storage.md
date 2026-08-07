@@ -20,6 +20,12 @@ For a separate community-library appliance that copies an approved read-only
 export, owns its client network, and promotes only its local staged release, use
 `runbooks/offline-community-library-appliance.md`.
 
+For AI model originals, derived formats, runtime/package closure, sensitive
+adjacent data, offline-verification state, and independent restore evidence,
+also use `runbooks/ai-model-runtime-preservation.md`. This shared-storage model
+still owns proposal, promotion, canonical-write, retention, and backup
+authority.
+
 ## Default Boundary
 
 - Approved shared corpora, Kiwix ZIM archives, catalogs, public docs, and

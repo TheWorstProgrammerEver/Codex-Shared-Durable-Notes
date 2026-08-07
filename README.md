@@ -109,6 +109,9 @@ This repo should contain reusable agent knowledge:
   and separately owned upload staging;
 - curated offline agent/developer support packs with checksummed package
   closures, per-platform capability validation, and explicit lifecycle policy;
+- AI model and runtime preservation with sovereignty classification,
+  attributable derivatives, complete runtime/platform closure, and verified
+  no-network restores;
 - NAS-backed Offline Reservoir sharing, ordinary-agent write boundaries, and
   Mnemosyne-style storage ownership;
 - trial-first storage-owner hardware selection, custody/inference separation,
