@@ -154,6 +154,9 @@ consulted, and how to interpret another agent's output.
     for detailed NAS/shared-reservoir permissions, proposal, promotion, backup,
     retention, and restore-validation guidance instead of duplicating that model
     here.
+  - Use the [Olympus NAS Deployment Baseline](../projects/olympus-nas.md) to
+    identify the deployed fleet storage substrate and the administrative facts
+    that still require live verification.
 - Open questions:
   - Decide whether Mnemosyne should run local/private LLM or VLM inference for
     data-sovereign offline-reservoir work, and which hardware class should host
